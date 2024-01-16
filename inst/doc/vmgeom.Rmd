@@ -1,0 +1,279 @@
+---
+title: "Parameter Estimation of the Geometric Magnitude Distribution"
+date: "`r Sys.Date()`"
+output:
+    rmarkdown::html_vignette:
+        toc: true
+        fig_width: 6
+        fig_height: 4
+vignette: >
+  %\VignetteIndexEntry{Parameter Estimation of the Geometric Magnitude Distribution}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(vismeteor)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+The geometric distribution of meteor magnitudes is a frequently used statistical model to describe
+the real magnitude distribution of a meteor shower. The observable magnitude distribution of meteors
+is then
+$$
+    {\displaystyle P[M = m] \sim f(m) \, \mathrm r^{-m}} \,\mathrm{,}
+$$
+where `m >= -0.5` is the difference between the limiting magnitude
+and the meteor magnitude. `f(m)` is the perception probability function.
+
+The estimation of the population index r, briefly called the r-value,
+is a common task in the evaluation of meteor magnitudes.
+Here we demonstrate two methods for unbiased estimation of this parameter.
+
+First, we obtain some magnitude observations from the example data set,
+which also includes the limiting magnitude.
+
+```{r, echo=TRUE, results='hide'}
+observations <- with(PER_2015_magn$observations, {
+    idx <- !is.na(lim.magn) & sl.start > 135.81 & sl.end < 135.87
+    data.frame(
+        magn.id = magn.id[idx],
+        lim.magn = lim.magn[idx]
+    )
+})
+head(observations, 5) # Example values
+```
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(observations, 5))
+```
+
+Next, the observed meteor magnitudes are matched with the corresponding observations.
+This is necessary as we need the limiting magnitudes of the observations to determine
+the r-value.
+
+Using
+
+```{r, echo=TRUE, results='hide'}
+magnitudes <- merge(
+  observations,
+  as.data.frame(PER_2015_magn$magnitudes),
+  by = 'magn.id'
+)
+magnitudes$magn <- as.integer(as.vector(magnitudes$magn))
+head(magnitudes[magnitudes$Freq>0,], 5) # Example values
+```
+
+we obtain a data frame with the absolute observed frequencies `Freq` for each
+observation of a magnitude class:
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
+```
+
+This data frame contains a total of `r sum(magnitudes$Freq)` meteors.
+This is a sufficiently large number to estimate the r-value.
+
+## Maximum Likelihood Method I
+
+The maximum likelihood method can be used to estimate the r-value in an unbiased manner.
+For this, the function `dvmgeom()` is needed, which returns the probability density of
+the observable meteor magnitudes when the r-value and the limiting magnitudes are known.
+
+The following algorithm estimates the r-value by maximizing the likelihood with
+the `optim()` function. The function `ll` returns the negative log-likelihood,
+as `optim()` identifies a minimum. The expression
+`subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5`
+ensures that meteors fainter than the limiting magnitude are not used if they exist.
+
+```{r, echo=TRUE, results='hide'}
+# maximum likelihood estimation (MLE) of r
+result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5), {
+    # log likelihood function
+    ll <- function(r) -sum(Freq * dvmgeom(magn, lim.magn, r, log=TRUE))
+    r.start <- 2.0 # starting value
+    r.lower <- 1.2 # lowest expected value
+    r.upper <- 4.0 # highest expected value
+    # find minimum
+    optim(r.start, ll, method='Brent', lower=r.lower, upper=r.upper, hessian=TRUE)
+})
+```
+
+This gives the expected value and the variance of the r-value:
+
+```{r, echo=TRUE}
+r.mean <- result$par # mean of r
+print(r.mean)
+r.var <- 1/result$hessian[1][1] # variance of r
+print(r.var)
+```
+
+## Maximum Likelihood Method II
+
+With the maximum likelihood method, it can be demonstrated that the mean difference
+between meteor magnitudes and the limiting magnitude is an unbiased estimator for
+the r-value. This mean is straightforward to calculate:
+
+```{r, echo=TRUE}
+m.mean <- with(magnitudes, sum((lim.magn - magn) * Freq)/sum(Freq))
+print(m.mean)
+```
+
+Similarly, its variance is:
+
+```{r, echo=TRUE}
+m.var <- with(magnitudes, {
+    n <- sum(Freq)
+    sum((lim.magn - magn - m.mean)^2 * Freq)/((n-1) * n)
+})
+print(m.var)
+```
+
+We can easily determine the mean for an r-value using the Laplace transform
+of the perception probabilities by setting `s=log(r)`. However, since we aim
+to inversely determine the r-value from the mean value, we first generate
+the necessary values and then employ the `splinefun()` function for interpolation:
+
+```{r, echo=TRUE, results='hide'}
+r.mean.fun <- with(new.env(), {
+    r <- seq(1.3, 3.5, 0.1)
+    s <- log(r)
+    m.mean <- -vmperception.l(s, deriv.degree = 1L)/vmperception.l(s)
+    splinefun(m.mean, r)
+})
+```
+
+This approach yields the r-value as follows:
+
+```{r, echo=TRUE}
+r.mean <- r.mean.fun(m.mean)
+print(r.mean)
+```
+
+Assuming that the mean is normally distributed and that the variance of
+magnitudes `m.var` is small, we can obtain the variance of the r-value:
+
+```{r, echo=TRUE}
+r.var <- r.mean.fun(m.mean, deriv = 1L)^2 * m.var
+print(r.var)
+```
+
+The method described herein for estimating the r-value offers an advantage over
+the previous method. It is not only more straightforward to execute but also
+less computationally demanding.
+
+## Residual Analysis
+
+So far, we have operated under the assumption that the real distribution of meteor magnitudes
+is exponential and that the perception probabilities are accurate.
+We now use the Chi-Square goodness-of-fit test to check whether the observed frequencies match
+the expected frequencies. Then, using the estimated r-value, we retrieve the relative
+frequencies `p` for each observation and add them to the data frame `magnitudes`:
+
+```{r, echo=TRUE, results='hide'}
+magnitudes$p <- with(magnitudes, dvmgeom(m = magn, lm = lim.magn, r.mean))
+```
+
+We must also consider the probabilities for the magnitude class with the brightest meteors.
+
+```{r, echo=TRUE, results='hide'}
+magn.min <- min(magnitudes$magn)
+```
+
+The smallest magnitude class `magn.min` is `r magn.min`. In calculating the probabilities,
+we assume that the magnitude class `r magn.min` contains meteors that are either brighter
+or equally bright as `r magn.min` and thus use the function `pvmgeom()` to determine
+their probability.
+
+```{r, echo=TRUE, results='asis'}
+idx <- magnitudes$magn == magn.min
+magnitudes$p[idx] <- with(
+    magnitudes[idx,],
+    pvmgeom(m = magn + 1L, lm = lim.magn, r.mean, lower.tail = TRUE)
+)
+```
+
+This ensures that the probability of observing a meteor of any given magnitude is 100%.
+This is known as the normalization condition. Accordingly, the Chi-Square goodness-of-fit test
+will fail if this condition is not met.
+
+We now create the contingency table `magnitutes.observed` for the observed meteor magnitudes
+and its margin table.
+
+```{r, echo=TRUE}
+magnitutes.observed <- xtabs(Freq ~ magn.id + magn, data = magnitudes)
+magnitutes.observed.mt <- margin.table(magnitutes.observed, margin = 2) 
+print(magnitutes.observed.mt)
+```
+
+Next, we check which magnitude classes need to be aggregated so that each contains
+at least 10 meteors, allowing us to perform a Chi-Square goodness-of-fit test.
+
+The last output shows that meteors of magnitude class `0` or brighter must be combined into
+a magnitude class `0-`. Meteors with a brightness less than `4` are grouped here in the
+magnitude class `4+`, and a new contingency table magnitudes.observed is created:
+
+```{r, echo=TRUE}
+magnitudes$magn[magnitudes$magn <= 0] <- '0-'
+magnitudes$magn[magnitudes$magn >= 4] <- '4+'
+magnitutes.observed <- xtabs(Freq ~ magn.id + magn, data = magnitudes)
+print(margin.table(magnitutes.observed, margin = 2))
+```
+
+We now need the corresponding expected relative frequencies
+
+```{r, echo=TRUE}
+magnitutes.expected <- xtabs(p ~ magn.id + magn, data = magnitudes)
+magnitutes.expected <- magnitutes.expected/nrow(magnitutes.expected)
+print(sum(magnitudes$Freq) * margin.table(magnitutes.expected, margin = 2))
+```
+
+and then carry out the Chi-Square goodness-of-fit test:
+
+```{r, echo=TRUE, results='asis'}
+chisq.test.result <- chisq.test(
+    x = margin.table(magnitutes.observed, margin = 2),
+    p = margin.table(magnitutes.expected, margin = 2)
+)
+```
+
+As a result, we obtain the p-value:
+
+```{r, echo=TRUE}
+print(chisq.test.result$p.value)
+```
+
+If we set the level of significance at 5 percent, then it is clear that the p-value with
+`r chisq.test.result$p.value` is greater than 0.05. Thus, under the assumption that the
+magnitude distribution follows an geometric meteor magnitude distribution and assuming that
+the perception probabilities are correct (i.e., error-free or precisely known),
+the assumptions cannot be rejected. However, the converse is not true; the assumptions
+may not necessarily be correct. The total count of meteors here is too small for such
+a conclusion.
+
+To verify the p-value, we also graphically represent the Pearson residuals:
+
+```{r, fig.show='hold'}
+chisq.test.residuals <- with(new.env(), {
+    chisq.test.residuals <- residuals(chisq.test.result)
+    v <- as.vector(chisq.test.residuals)
+    names(v) <- rownames(chisq.test.residuals)
+    v
+})
+
+plot(
+    chisq.test.residuals,
+    main="Residuals of the chi-square goodness-of-fit test",
+    xlab="m",
+    ylab="Residuals",
+    ylim=c(-3, 3),
+    xaxt = "n"
+)
+abline(h=0.0, lwd=2)
+axis(1, at = seq_along(chisq.test.residuals), labels = names(chisq.test.residuals))
+```

@@ -1,0 +1,238 @@
+---
+title: "vismeteor"
+output:
+    rmarkdown::html_vignette:
+        toc: true
+        fig_width: 6
+        fig_height: 4
+vignette: >
+  %\VignetteIndexEntry{vismeteor}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, include = FALSE}
+library(vismeteor)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+`vismeteor` was developed to provide a comprehensive tool for analyzing visually observed
+meteors. It takes into account human perception of different meteor magnitudes through
+perception probabilities. Therefore, this package provides methods that incorporate
+these perception probabilities in the evaluation of meteor magnitudes.
+
+Perception probabilities are crucial in analyzing the observed magnitude distributions,
+leading to specific magnitude distributions unique to visual meteor observations.
+A popular distribution is the Visual Geometric Magnitude Distribution.
+This is a standard geometric distribution adjusted by multiplying its densities with
+the perception probabilities. The result is a distribution whose sole parameter is
+the Population Index r.
+This package enables users to work with this specially adjusted distribution.
+
+Additionally, this package offers tools to facilitate the evaluation, recognizing that
+visual meteor observations typically report only total counts over a specified period,
+rather than individual meteor events.
+
+For visual observations of meteor magnitudes, the observed counts can be specified in
+fractional values (half meteors). This package includes a function for unbiased rounding
+of these fractional values to use standard tools in R that only allow integer values.
+
+## Perception probabilities
+
+Meteors appear randomly distributed across the sky. The perception of an observer can
+vary significantly for each meteor, influenced largely by the region of the sky where
+the meteor appears. Depending on its position, a meteor might be perceived or missed entirely,
+leading to the concept of perception probabilities.
+
+Perception probabilities quantify the likelihood of an observer detecting a meteor.
+They provide a statistical measure reflecting the chance of seeing or not seeing a meteor
+under various conditions. In statistical modeling of visual observations, these probabilities
+are commonly expressed in relation to the difference between the meteor's magnitude and the
+limiting magnitude of the observation.
+
+This package includes the function `vmperception()` to return perception probabilities for
+visual meteor magnitudes. For advanced analytical purposes, `vmperception.l()` is provided
+to return the Laplace-transformed perception probabilities.
+
+Custom perception probability functions can be passed to most functions of this package.
+This allows users to tailor the behavior of the functions to their specific needs and
+conduct their own studies on the appearance of observable meteor magnitudes.
+This flexibility is particularly valuable for researchers wishing to incorporate
+their own empirical data or models into the analysis.
+
+See `?vmperception` and `?vmperception.l` for more information.
+
+## Geometric magnitude distribution
+
+In visual meteor observation, it is common to estimate meteor magnitudes in integer values.
+Hence, the geometric magnitude distribution is discrete and has the density:
+$$
+    {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
+$$
+where $x \ge -0.5$ represents the difference between the limiting magnitude and the
+meteor magnitude, and $f(x)$ is the perception probability function. This distribution
+is a product of the perception probabilities with the actual geometric distribution of
+the meteor magnitudes. Therefore, the parameter $p$ of the geometric distribution is $p=1−1/r$.
+
+The advantage of this model is its simplicity. When the number of observed meteors is low,
+it can often be shown that the distribution of meteor magnitudes corresponds to this model.
+
+```{r, echo=TRUE, results='hide'}
+m <- seq(6, -4, -1)
+limmag <- 6.5
+r <- 2.0
+p <- vismeteor::dvmgeom(m, limmag, r)
+barplot(
+    p,
+    names.arg = m,
+    main = paste0('Density (r = ', r, ', limmag = ', limmag, ')'),
+    col = "blue",
+    xlab = 'm',
+    ylab = 'p',
+    border = "blue",
+    space = 0.5
+)
+axis(side = 2, at = pretty(p))
+```
+
+See `?vmgeom` for more information.
+
+## Ideal magnitude distribution
+
+The ideal magnitude distribution is an alternative model to the geometric magnitude distribution.
+It more accurately reflects the finiteness of meteor magnitudes across the entire magnitude
+spectrum, drawing upon the model of an ideal gas from theoretical physics as a conceptual analogy.
+
+This model is particularly useful when, compared to the geometric distribution, fewer faint meteor
+magnitudes have been observed.
+
+The density of an ideal magnitude distribution is
+
+$$
+{\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
+$$
+where $m$ is the meteor magnitude, $r = 10^{0.4} \approx 2.51189 \dots$ is a constant and
+$\psi$ is the only parameter of this magnitude distribution.
+
+```{r, echo=TRUE, results='hide'}
+m <- seq(6, -4, -1)
+psi <- 5.0
+limmag <- 6.5
+p <- vismeteor::dvmideal(m, limmag, psi)
+barplot(
+    p,
+    names.arg = m,
+    main = paste0('Density (psi = ', psi, ', limmag = ', limmag, ')'),
+    col = "blue",
+    xlab = 'm',
+    ylab = 'p',
+    border = "blue",
+    space = 0.5
+)
+axis(side = 2, at = pretty(p))
+```
+
+See `?mideal` and `?vmideal` for more information.
+
+## Fractional Counting
+
+In the statistical analysis of visual meteor observations, a method known as "count data"
+in categorical time series is used. Observers record the number of meteors in each category
+over specific time intervals.
+
+In visual meteor observation, observers record numerical meteor magnitudes and sum them,
+uniquely allowing for "half" counts when indecisive between two values. This fractional
+counting reflects measurement uncertainty, splitting counts between adjacent magnitude categories.
+
+While fractional counting accommodates measurement uncertainty with "half" counts, some tools
+cannot process these fractional values and require integer rounding.
+The function `vmtable()` addresses this by rounding the magnitudes in a contingency table to whole
+numbers. It ensures that the rounding process only alters the marginal totals when necessary,
+preserving the overall count integrity. This means both the grand total and the intermediate
+sums of meteors observed remain consistent, ensuring accurate and usable data for
+subsequent analysis.
+
+Example:
+```{r, echo=TRUE}
+mt <- as.table(matrix(
+    c(
+        0.0, 0.0, 2.5, 0.5, 0.0, 1.0,
+        0.0, 1.5, 2.0, 0.5, 0.0, 0.0,
+        1.0, 0.0, 0.0, 3.0, 2.5, 0.5
+    ), nrow = 3, ncol = 6, byrow = TRUE
+))
+colnames(mt) <- seq(6)
+rownames(mt) <- c('A', 'B', 'C')
+margin.table(mt, 1)
+margin.table(mt, 2)
+
+# contingency table with integer values
+(mt.int <- vmtable(mt))
+margin.table(mt.int, 1)
+margin.table(mt.int, 2)
+```
+
+See `?vmtable` for more information.
+
+## Quantile Analysis with Minimum Meteor Count
+
+The function `freq.quantile()` is tailored for analyzing time series data in visual
+meteor observation, where the count of meteors is recorded over specific time intervals.
+
+Unlike traditional methods that sort quantiles based on time and percent, which often result
+in some quantiles having fewer meteors than desired, `freq.quantile()` constructs quantiles
+with a focus on ensuring a minimum number of meteors in each quantile.
+
+This method addresses the challenge of varying meteor counts in each interval, including those
+with zero meteors. By utilizing `freq.quantile()`, users can effectively divide the time series
+into quantiles that are both time-based and density-based, enhancing the understanding of meteor
+occurrence and distribution over the observed period while ensuring each quantile meets the
+minimum count criterion.
+
+This approach provides a more nuanced and reliable analysis, especially vital when dealing with
+the inherent variability in meteor observations.
+
+The following example represents a time-ordered list of observed meteor counts.
+The objective is to group these counts into quantiles while maintaining their chronological order,
+ensuring that each quantile contains at least 10 meteors.
+
+```{r, echo=TRUE}
+freq <- c(1,8,3,3,4,9,5,0,0,2,7,8,2,6,4)
+f <- freq.quantile(freq, 10)
+print(f)
+print(tapply(freq, f, sum))
+```
+
+See `?freq.quantile` for more information.
+
+## Interfacing VMDB Data with `load_vmdb()`
+
+The `load_vmdb()` function is designed to interface with the
+[imo-vmdb](https://pypi.org/project/imo-vmdb/)
+application, processing data specifically exported from the Visual Meteor Database (VMDB) in
+CSV format. After these CSV exports are verified and validated with the _imo-vmdb_ application,
+they are stored in a relational database, which enhances the accessibility and usability of the
+data compared to its original CSV format. This storage method establishes relationships between
+data records and enriches them with additional information derived from the original data records.
+
+Utilizing `load_vmdb()`, users can efficiently query and retrieve specific datasets relevant
+to their meteor observation analysis. This streamlined access facilitates more comprehensive
+and targeted research.
+
+Within this package, `PER_2015_rates` and `PER_2015_magn` are provided as example data sets.
+They are included for testing and training purposes, allowing users to
+understand and utilize the full functionality of the entire package.
+
+See `?load_vmdb`, `?PER_2015_rates` and `?PER_2015_magn` for more information.

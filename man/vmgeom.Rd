@@ -6,7 +6,7 @@
 \alias{pvmgeom}
 \alias{qvmgeom}
 \alias{rvmgeom}
-\title{Visual magnitude distribution of geometric distributed meteor magnitudes}
+\title{Geometric Model of Visual Meteor Magnitudes}
 \usage{
 dvmgeom(m, lm, r, log = FALSE, perception.fun = NULL)
 
@@ -21,7 +21,7 @@ rvmgeom(n, lm, r, perception.fun = NULL)
 
 \item{lm}{numeric; limiting magnitude.}
 
-\item{r}{numeric; the population index. It is the only parameter of the distribution.}
+\item{r}{numeric; the population index.}
 
 \item{log}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
 
@@ -36,44 +36,50 @@ Default is \link{vmperception}.}
 \item{n}{numeric; count of meteor magnitudes.}
 }
 \value{
-\code{dvmgeom} gives the density, \code{pvmgeom} gives the distribution function,
-\code{qvmgeom} gives the quantile function, and \code{rvmgeom} generates random deviates.
+\itemize{
+\item \code{dvmgeom}: density
+\item \code{pvmgeom}: distribution function
+\item \code{qvmgeom}: quantile function
+\item \code{rvmgeom}: random generation
+}
 
-The length of the result is determined by \code{n} for \code{rvmgeom}, and is the maximum
-of the lengths of the numerical vector arguments for the other functions.
+The length of the result is determined by \code{n} for \code{rvmgeom}, and by the maximum
+of the lengths of the numeric vector arguments for the other functions.
 
 Since the distribution is discrete, \code{qvmgeom} and \code{rvmgeom} always return integer values.
-\code{qvmgeom} can return \code{NaN} value with a warning.
+\code{qvmgeom} may return \code{NaN} with a warning.
 }
 \description{
-Density, distribution function, quantile function and random generation for the
-visual magnitude distribution of geometric distributed meteor magnitudes.
+Density, distribution function, quantile function, and random generation
+for the geometric model of visual meteor magnitudes.
 }
 \details{
-In visual meteor observation, it is common to estimate meteor magnitudes in integer values.
-Hence, this distribution is discrete and has the density
+In visual meteor observations, magnitudes are usually estimated as integer values.
+Hence, this distribution is discrete and its probability mass function is
 \deqn{
     {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
 }
-where \eqn{x \ge -0.5} is the difference between the limiting magnitude \code{lm}
-and the meteor magnitude \code{m} and \eqn{f(x)} is the perception probability function.
-This distribution is thus a product of the
+where \eqn{x \ge -0.5} denotes the difference between the limiting magnitude \code{lm}
+and the meteor magnitude \code{m}, and \eqn{f(x)} is the perception probability function.
+Thus, the distribution is the product of the
 \link[=vmperception]{perception probabilities} and the
-actual \link[stats:Geometric]{geometric distribution} of the meteor magnitudes.
-Therefore, the parameter \code{p} of the geometric distribution is \code{p = 1 - 1/r}.
+underlying \link[stats:Geometric]{geometric distribution} of meteor magnitudes.
+Therefore, the parameter \code{p} of the geometric distribution is given by \code{p = 1 - 1/r}.
 
-The parameter \code{lm} indicate what the parameter \code{m} refers to.
+The parameter \code{lm} specifies the reference for the meteor magnitude \code{m}.
 \code{m} must be an integer meteor magnitude.
-The length of the vector \code{lm} must then be equal to the length of the vector \code{m}
-or \code{lm} is a scalar value.
-In case of \code{rvmgeom}, the length of the vector \code{lm} must be \code{n} or \code{lm} is a scalar value.
+The length of the vector \code{lm} must either equal the length of the vector \code{m},
+or \code{lm} must be a scalar value.
+In the case of \code{rvmgeom}, the length of the vector \code{lm} must equal \code{n},
+or \code{lm} must be a scalar value.
 
-If the perception probabilities function \code{perception.fun} is given,
-it must have the signature \verb{function(x)} and must return the perception probabilities of
+If a perception probability function \code{perception.fun} is provided,
+it must have the signature \verb{function(x)} and return the perception probability of
 the difference \code{x} between the limiting magnitude and the meteor magnitude.
-If \code{x >= 15.0}, the \code{perception.fun} function should return the perception probability of \code{1.0}.
-If \code{log = TRUE} is given, the logarithm value of the perception probabilities
-must be returned. \code{perception.fun} is resolved using \link{match.fun}.
+If \code{x >= 15.0}, the function \code{perception.fun} should return a perception probability of \code{1.0}.
+If \code{log = TRUE} is specified, the logarithm of the perception probabilities
+must be returned.
+The argument \code{perception.fun} is resolved using \link{match.fun}.
 }
 \examples{
 N <- 100

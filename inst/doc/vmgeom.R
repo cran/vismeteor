@@ -19,20 +19,23 @@ head(observations, 5) # Example values
 knitr::kable(head(observations, 5))
 
 ## ----echo=TRUE, results='hide'------------------------------------------------
-magnitudes <- merge(
-  observations,
-  as.data.frame(PER_2015_magn$magnitudes),
-  by = 'magn.id'
-)
-magnitudes$magn <- as.integer(as.vector(magnitudes$magn))
-head(magnitudes[magnitudes$Freq>0,], 5) # Example values
+magnitudes <- with(new.env(), {
+  magnitudes <- merge(
+    observations,
+    as.data.frame(PER_2015_magn$magnitudes),
+    by = 'magn.id'
+  )
+  magnitudes$magn <- as.integer(as.vector(magnitudes$magn))
+  subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5)
+})
+head(magnitudes, 5) # Example values
 
 ## ----echo=FALSE, results='asis'-----------------------------------------------
 knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
 
 ## ----echo=TRUE, results='hide'------------------------------------------------
 # maximum likelihood estimation (MLE) of r
-result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5), {
+result <- with(magnitudes, {
     # log likelihood function
     ll <- function(r) -sum(Freq * dvmgeom(magn, lim.magn, r, log=TRUE))
     r.start <- 2.0 # starting value
@@ -43,40 +46,104 @@ result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5
 })
 
 ## ----echo=TRUE----------------------------------------------------------------
-r.mean <- result$par # mean of r
-print(r.mean)
-r.var <- 1/result$hessian[1][1] # variance of r
-print(r.var)
-
-## ----echo=TRUE----------------------------------------------------------------
-m.mean <- with(magnitudes, sum((lim.magn - magn) * Freq)/sum(Freq))
-print(m.mean)
-
-## ----echo=TRUE----------------------------------------------------------------
-m.var <- with(magnitudes, {
-    n <- sum(Freq)
-    sum((lim.magn - magn - m.mean)^2 * Freq)/((n-1) * n)
-})
-print(m.var)
+print(result$par) # mean of r
+print(1/result$hessian[1][1]) # variance of r
 
 ## ----echo=TRUE, results='hide'------------------------------------------------
-r.mean.fun <- with(new.env(), {
-    r <- seq(1.3, 3.5, 0.1)
-    s <- log(r)
-    m.mean <- -vmperception.l(s, deriv.degree = 1L)/vmperception.l(s)
-    splinefun(m.mean, r)
+with(new.env(), {
+  data.plot <- data.frame(r = seq(2.0, 2.8, 0.01))
+  data.plot$ll <- mapply(function(r){
+    with(magnitudes, {
+      # log likelihood function
+      sum(Freq * dvmgeom(magn, lim.magn, r, log = TRUE))
+    })
+  }, data.plot$r)
+  data.plot$l <- exp(data.plot$ll - max(data.plot$ll))
+  data.plot$l <- data.plot$l / sum(data.plot$l)
+  plot(data.plot$r, data.plot$l,
+    type = "l",
+    col = "blue",
+    xlab = "r",
+    ylab = "likelihood"
+  )
+  abline(v = result$par, col = "red", lwd = 1)
+})
+
+## ----echo=TRUE, results='show'------------------------------------------------
+tm.mean <- with(magnitudes, {
+  N <- sum(Freq)
+  tm <- vmgeomVstFromMagn(magn, lim.magn)
+  tm.mean <- sum(Freq * tm)/N
+  tm.var <- sum(Freq * (tm - tm.mean)^2)/(N-1)
+  tm.mean.var <- tm.var / N
+  list('val' = tm.mean, 'var' = tm.mean.var, 'sd' = sqrt(tm.mean.var))
+})
+
+## ----echo=TRUE, results='show'------------------------------------------------
+print(paste('tm mean:', tm.mean$val))
+print(paste('tm var:', tm.mean$var))
+
+## ----echo=TRUE, results='show'------------------------------------------------
+# Bootstrapping Method
+tm.means <- with(magnitudes, {
+    N <- sum(Freq)
+    tm <- vmgeomVstFromMagn(magn, lim.magn)
+    replicate(50000, {
+      mean(sample(tm, size = N, replace = TRUE, prob = Freq))
+    })
+})
+
+## ----echo=TRUE, results='show'------------------------------------------------
+with(new.env(), {
+  tm.min <- tm.mean$val - 3 * tm.mean$sd
+  tm.max <- tm.mean$val + 3 * tm.mean$sd
+  tm.means <- subset(tm.means, tm.means > tm.min & tm.means < tm.max)
+  brks <- seq(min(tm.means) - 0.02, max(tm.means) + 0.02, by = 0.02)
+  hist(tm.means,
+    breaks = brks,
+    col = "skyblue",
+    border = "black",
+    main = "Histogram of mean tm",
+    xlab = "tm",
+    ylab = "count"
+  )
+})
+
+## ----echo=TRUE, results='show'------------------------------------------------
+with(new.env(), {
+  tm.min <- tm.mean$val - 3 * tm.mean$sd
+  tm.max <- tm.mean$val + 3 * tm.mean$sd
+  tm.means <- subset(tm.means, tm.means > tm.min & tm.means < tm.max)
+  r <- vmgeomVstToR(tm.means)
+  brks <- seq(min(r) - 0.02, max(r) + 0.02, by = 0.02)
+  hist(r,
+    breaks = brks,
+    col = "skyblue",
+    border = "black",
+    main = "Histogram of mean r",
+    xlab = "r",
+    ylab = "count"
+  )
+  abline(v = vmgeomVstToR(tm.mean$val), col = "red", lwd = 1)
+})
+
+## ----echo=TRUE, results='hide'------------------------------------------------
+# estimation of r
+result <- with(new.env(), {
+    r.hat  <- vmgeomVstToR(tm.mean$val)
+    dr_dtm <- vmgeomVstToR(tm.mean$val, deriv.degree = 1L)
+
+    # Delta method: variance and standard error of r.hat
+    r.var <- (dr_dtm^2) * tm.mean$var
+    list('r.hat' = r.hat, 'r.var' = r.var)
 })
 
 ## ----echo=TRUE----------------------------------------------------------------
-r.mean <- r.mean.fun(m.mean)
-print(r.mean)
-
-## ----echo=TRUE----------------------------------------------------------------
-r.var <- r.mean.fun(m.mean, deriv = 1L)^2 * m.var
-print(r.var)
+print(result$r.hat)
+print(result$r.var)
 
 ## ----echo=TRUE, results='hide'------------------------------------------------
-magnitudes$p <- with(magnitudes, dvmgeom(m = magn, lm = lim.magn, r.mean))
+magnitudes$p <- with(magnitudes, dvmgeom(m = magn, lm = lim.magn, result$r.hat))
 
 ## ----echo=TRUE, results='hide'------------------------------------------------
 magn.min <- min(magnitudes$magn)
@@ -85,7 +152,7 @@ magn.min <- min(magnitudes$magn)
 idx <- magnitudes$magn == magn.min
 magnitudes$p[idx] <- with(
     magnitudes[idx,],
-    pvmgeom(m = magn + 1L, lm = lim.magn, r.mean, lower.tail = TRUE)
+    pvmgeom(m = magn + 1L, lm = lim.magn, result$r.hat, lower.tail = TRUE)
 )
 
 ## ----echo=TRUE----------------------------------------------------------------

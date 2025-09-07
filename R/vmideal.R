@@ -4,56 +4,59 @@
 #' @aliases qvmideal
 #' @aliases rvmideal
 #' @aliases cvmideal
-#' @title Visual magnitude distribution of ideal distributed meteor magnitudes
+#' @title Ideal Distribution of Visual Meteor Magnitudes
 #' @description
-#' Density, distribution function, quantile function and random generation for the
-#' visual magnitude distribution of ideal distributed meteor magnitudes.
-#' @param psi numeric; the location parameter of a probability distribution.
-#'     It is the only parameter of the distribution.
+#' Density, distribution function, quantile function, and random generation
+#' for the ideal distribution of visual meteor magnitudes.
+#' @param psi numeric; the location parameter of the probability distribution.
 #' @param m integer; visual meteor magnitude.
 #' @param lm numeric; limiting magnitude.
 #' @param p numeric; probability.
 #' @param n numeric; count of meteor magnitudes.
-#' @param log logical; if `TRUE`, probabilities p are given as `log(p)`.
-#' @param lower.tail logical; if `TRUE` (default) probabilities are
-#'     \eqn{P[M < m]}, otherwise, \eqn{P[M \ge m]}.
-#' @param perception.fun function; perception probability function (optional).
-#'     Default is [vismeteor::vmperception].
+#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
+#' @param lower.tail logical; if `TRUE` (default), probabilities are
+#'     \eqn{P[M < m]}; otherwise, \eqn{P[M \ge m]}.
+#' @param perception.fun function; optional perception probability function.
+#'     The default is [vismeteor::vmperception].
+#'
 #' @details
-#' The density of an [ideal magnitude distribution][vismeteor::mideal] is
+#' The density of the [ideal distribution of meteor magnitudes][vismeteor::mideal] is
 #' \deqn{
 #'     {\displaystyle f(m) = \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 #' }
-#' where \eqn{m} is the meteor magnitude, \eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant and
+#' where \eqn{m} is the meteor magnitude, \eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant, and
 #' \eqn{\psi} is the only parameter of this magnitude distribution.
 #'
-#' In visual meteor observation, it is common to estimate meteor magnitudes in integer values.
-#' Hence, this distribution is discrete and has the density
+#' In visual meteor observations, magnitudes are usually estimated as integer values.
+#' Hence, this distribution is discrete and its probability mass function is given by
 #' \deqn{
-#'    {\displaystyle P[M = m] \sim g(m) \, \int_{m-0.5}^{m+0.5} f(m) \, \, \mathrm{d}m} \, \mathrm{,}
+#'     P[M = m] \sim g(m) \, \int_{m-0.5}^{m+0.5} f(m) \, \mathrm{d}m \, ,
 #' }
-#' where \eqn{g(m)} is the perception probability.
-#' This distribution is thus a product of the
+#' where \eqn{g(m)} denotes the perception probability.
+#' Thus, the distribution is the product of the
 #' [perception probabilities][vismeteor::vmperception] and the
-#' actual [ideal distribution][vismeteor::mideal] of the meteor magnitudes.
+#' underlying [ideal distribution][vismeteor::mideal] of meteor magnitudes.
 #'
-#' If the perception probabilities function `perception.fun` is given,
-#' it must have the signature `function(M)` and must return the perception probabilities of
+#' If a perception probability function `perception.fun` is supplied,
+#' it must have the signature `function(M)` and return the perception probabilities of
 #' the difference `M` between the limiting magnitude and the meteor magnitude.
-#' If `m >= 15.0`, the `perception.fun` function should return the perception probability of `1.0`.
-#' If `log = TRUE` is given, the logarithm value of the perception probabilities
-#' must be returned. `perception.fun` is resolved using [match.fun].
+#' If `m >= 15.0`, the `perception.fun` function should return a perception probability of `1.0`.
+#' If `log = TRUE` is given, the logarithm of the perception probabilities
+#' must be returned. The argument `perception.fun` is resolved using [match.fun].
+#'
 #' @return
-#' `dvmideal` gives the density, `pvmideal` gives the distribution function,
-#' `qvmideal` gives the quantile function, and `rvmideal` generates random deviates.
-#' `cvmideal` gives the partial convolution of the ideal meteor magnitude distribution
-#'  with the perception probabilities.
+#' - `dvmideal`: density  
+#' - `pvmideal`: distribution function  
+#' - `qvmideal`: quantile function  
+#' - `rvmideal`: random generation  
+#' - `cvmideal`: partial convolution of the ideal distribution of meteor magnitudes
+#'   with the perception probabilities.
 #'
 #' The length of the result is determined by `n` for `rvmideal`, and is the maximum
-#' of the lengths of the numerical vector arguments for the other functions.
+#' of the lengths of the numeric vector arguments for the other functions.
 #'
 #' Since the distribution is discrete, `qvmideal` and `rvmideal` always return integer values.
-#' `qvmideal` can return `NaN` value with a warning.
+#' `qvmideal` may return `NaN` with a warning.
 #' @seealso [vismeteor::mideal]
 #'   [vismeteor::vmperception]
 #'

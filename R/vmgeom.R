@@ -3,14 +3,14 @@
 #' @aliases pvmgeom
 #' @aliases qvmgeom
 #' @aliases rvmgeom
-#' @title Visual magnitude distribution of geometric distributed meteor magnitudes
+#' @title Geometric Model of Visual Meteor Magnitudes
 #' @description
-#' Density, distribution function, quantile function and random generation for the
-#' visual magnitude distribution of geometric distributed meteor magnitudes.
+#' Density, distribution function, quantile function, and random generation
+#' for the geometric model of visual meteor magnitudes.
 #' @param m numeric; the meteor magnitude.
 #' @param p numeric; probability.
 #' @param lm numeric; limiting magnitude.
-#' @param r numeric; the population index. It is the only parameter of the distribution.
+#' @param r numeric; the population index.
 #' @param n numeric; count of meteor magnitudes.
 #' @param log logical; if `TRUE`, probabilities p are given as `log(p)`.
 #' @param lower.tail logical; if `TRUE` (default) probabilities are
@@ -18,39 +18,44 @@
 #' @param perception.fun function; perception probability function (optional).
 #'     Default is [vismeteor::vmperception].
 #' @details
-#' In visual meteor observation, it is common to estimate meteor magnitudes in integer values.
-#' Hence, this distribution is discrete and has the density
+#' In visual meteor observations, magnitudes are usually estimated as integer values.
+#' Hence, this distribution is discrete and its probability mass function is
 #' \deqn{
 #'     {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
 #' }
-#' where \eqn{x \ge -0.5} is the difference between the limiting magnitude `lm`
-#' and the meteor magnitude `m` and \eqn{f(x)} is the perception probability function.
-#' This distribution is thus a product of the
+#' where \eqn{x \ge -0.5} denotes the difference between the limiting magnitude `lm`
+#' and the meteor magnitude `m`, and \eqn{f(x)} is the perception probability function.
+#' Thus, the distribution is the product of the
 #' [perception probabilities][vismeteor::vmperception] and the
-#' actual [geometric distribution][stats::Geometric] of the meteor magnitudes.
-#' Therefore, the parameter `p` of the geometric distribution is `p = 1 - 1/r`.
+#' underlying [geometric distribution][stats::Geometric] of meteor magnitudes.
+#' Therefore, the parameter `p` of the geometric distribution is given by `p = 1 - 1/r`.
 #'
-#' The parameter `lm` indicate what the parameter `m` refers to.
-#' `m` must be an integer meteor magnitude.
-#' The length of the vector `lm` must then be equal to the length of the vector `m`
-#' or `lm` is a scalar value.
-#' In case of `rvmgeom`, the length of the vector `lm` must be `n` or `lm` is a scalar value.
+#' The parameter `lm` specifies the reference for the meteor magnitude `m`.
+#' `m` must be an integer meteor magnitude.  
+#' The length of the vector `lm` must either equal the length of the vector `m`,
+#' or `lm` must be a scalar value.  
+#' In the case of `rvmgeom`, the length of the vector `lm` must equal `n`,
+#' or `lm` must be a scalar value.
 #'
-#' If the perception probabilities function `perception.fun` is given,
-#' it must have the signature `function(x)` and must return the perception probabilities of
+#' If a perception probability function `perception.fun` is provided,
+#' it must have the signature `function(x)` and return the perception probability of
 #' the difference `x` between the limiting magnitude and the meteor magnitude.
-#' If `x >= 15.0`, the `perception.fun` function should return the perception probability of `1.0`.
-#' If `log = TRUE` is given, the logarithm value of the perception probabilities
-#' must be returned. `perception.fun` is resolved using [match.fun].
+#' If `x >= 15.0`, the function `perception.fun` should return a perception probability of `1.0`.
+#' If `log = TRUE` is specified, the logarithm of the perception probabilities
+#' must be returned.  
+#' The argument `perception.fun` is resolved using [match.fun].
+#'
 #' @return
-#' `dvmgeom` gives the density, `pvmgeom` gives the distribution function,
-#' `qvmgeom` gives the quantile function, and `rvmgeom` generates random deviates.
+#' - `dvmgeom`: density
+#' - `pvmgeom`: distribution function
+#' - `qvmgeom`: quantile function
+#' - `rvmgeom`: random generation
 #'
-#' The length of the result is determined by `n` for `rvmgeom`, and is the maximum
-#' of the lengths of the numerical vector arguments for the other functions.
+#' The length of the result is determined by `n` for `rvmgeom`, and by the maximum
+#' of the lengths of the numeric vector arguments for the other functions.
 #'
-#' Since the distribution is discrete, `qvmgeom` and `rvmgeom` always return integer values.
-#' `qvmgeom` can return `NaN` value with a warning.
+#' Since the distribution is discrete, `qvmgeom` and `rvmgeom` always return integer values.  
+#' `qvmgeom` may return `NaN` with a warning.
 #' @seealso [vismeteor::vmperception]
 #'   [stats::Geometric]
 #' @examples

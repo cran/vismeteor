@@ -26,7 +26,7 @@ magnitudes <- with(new.env(), {
       by = 'magn.id'
   )
   magnitudes$magn <- as.integer(as.character(magnitudes$magn))
-  magnitudes
+  subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5)
 })
 head(magnitudes[magnitudes$Freq>0,], 5) # Example values
 
@@ -35,11 +35,11 @@ knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
 
 ## ----echo=TRUE, results='hide'------------------------------------------------
 # maximum likelihood estimation (MLE) of psi
-result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5), {
+result <- with(magnitudes, {
     # log likelihood function
     ll <- function(psi) -sum(Freq * dvmideal(magn, lim.magn, psi, log=TRUE))
-    psi.start <- 5.0 # starting value
-    psi.lower <- 0.0 # lowest expected value
+    psi.start <- 6.0 # starting value
+    psi.lower <- 4.0 # lowest expected value
     psi.upper <- 10.0 # highest expected value
     # find minimum
     optim(psi.start, ll, method='Brent', lower=psi.lower, upper=psi.upper, hessian=TRUE)
@@ -48,10 +48,84 @@ result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5
 ## ----echo=TRUE----------------------------------------------------------------
 psi.mean <- result$par # mean of psi
 print(psi.mean)
-psi.var <- 1/result$hessian[1][1] # variance of r
+psi.var <- 1/result$hessian[1][1] # variance of psi
 print(psi.var)
 
+## ----echo=TRUE, results='hide'------------------------------------------------
+with(new.env(), {
+  data.plot <- data.frame(psi = seq(4.0, 11, 0.1))
+  data.plot$ll <- mapply(function(psi){
+    with(magnitudes, {
+      # log likelihood function
+      sum(Freq * dvmideal(magn, lim.magn, psi, log=TRUE))
+    })
+  }, data.plot$psi)
+  data.plot$l <- exp(data.plot$ll - max(data.plot$ll))
+  data.plot$l <- data.plot$l / sum(data.plot$l)
+  plot(data.plot$psi, data.plot$l,
+    type = "l",
+    col = "blue",
+    xlab = "psi",
+    ylab = "likelihood"
+  )
+  abline(v = result$par, col = "red", lwd = 1)
+})
+
+## ----echo=TRUE, results='show'------------------------------------------------
+tm.mean <- with(magnitudes, {
+  N <- sum(Freq)
+  tm <- vmidealVstFromMagn(magn, lim.magn)
+  tm.mean <- sum(Freq * tm)/N
+  tm.var <- sum(Freq * (tm - tm.mean)^2)/(N-1)
+  tm.mean.var <- tm.var / N
+  list('val' = tm.mean, 'var' = tm.mean.var, 'sd' = sqrt(tm.mean.var))
+})
+
+## ----echo=TRUE, results='show'------------------------------------------------
+print(paste('tm mean:', tm.mean$val))
+print(paste('tm var:', tm.mean$var))
+
+## ----echo=TRUE, results='show'------------------------------------------------
+tm.means <- with(magnitudes, {
+    N <- sum(Freq)
+    tm <- vmidealVstFromMagn(magn, lim.magn)
+    replicate(50000, {
+      mean(sample(tm, size = N, replace = TRUE, prob = Freq))
+    })
+})
+
+## ----echo=TRUE, results='show'------------------------------------------------
+with(new.env(), {
+  tm.min <- tm.mean$val - 3 * tm.mean$sd
+  tm.max <- tm.mean$val + 3 * tm.mean$sd
+  tm.means <- subset(tm.means, tm.means > tm.min & tm.means < tm.max)
+  brks <- seq(min(tm.means) - 0.02, max(tm.means) + 0.02, by = 0.02)
+  hist(tm.means,
+    breaks = brks,
+    col = "skyblue",
+    border = "black",
+    main = "Histogram of mean tm",
+    xlab = "tm",
+    ylab = "count",
+    xaxt = "n"
+  )
+  axis(1, at = seq(round(min(brks), 1), round(max(brks), 1) + 0.1, by = 0.1))
+  abline(v = 0, col = "red", lwd = 1)
+})
+
+## ----echo=TRUE----------------------------------------------------------------
+lim.magn.mean <- with(magnitudes, {
+    N <- sum(Freq)
+    sum(Freq * lim.magn)/N
+})
+print(paste('lim.magn.mean:', lim.magn.mean))
+print(paste('mean psi:', vmidealVstToPsi(tm.mean$val, lim.magn.mean)))
+
+## ----echo=TRUE----------------------------------------------------------------
+print(vmidealVstToPsi(qnorm(0.90, tm.mean$val, tm.mean$sd), lim.magn.mean))
+
 ## ----echo=TRUE, results='asis'------------------------------------------------
+psi.mean <- vmidealVstToPsi(tm.mean$val, lim.magn.mean)
 magnitudes$p <- with(magnitudes, dvmideal(m = magn, lm = lim.magn, psi.mean))
 
 ## ----echo=TRUE, results='hide'------------------------------------------------

@@ -1,5 +1,5 @@
 ---
-title: "Parameter Estimation of the Geometric Magnitude Distribution"
+title: "Parameter Estimation of the Geometric Model of Visual Meteor Magnitudes"
 date: "`r Sys.Date()`"
 output:
     rmarkdown::html_vignette:
@@ -7,7 +7,7 @@ output:
         fig_width: 6
         fig_height: 4
 vignette: >
-  %\VignetteIndexEntry{Parameter Estimation of the Geometric Magnitude Distribution}
+  %\VignetteIndexEntry{Parameter Estimation of the Geometric Model of Visual Meteor Magnitudes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -22,14 +22,14 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-The geometric distribution of meteor magnitudes is a frequently used statistical model to describe
-the real magnitude distribution of a meteor shower. The observable magnitude distribution of meteors
-is then
+The geometric model of visual meteor magnitudes is a commonly used statistical approach
+to describe the magnitude distribution of a meteor shower. The observable magnitude distribution
+of meteors is then
 $$
     {\displaystyle P[M = m] \sim f(m) \, \mathrm r^{-m}} \,\mathrm{,}
 $$
-where `m >= -0.5` is the difference between the limiting magnitude
-and the meteor magnitude. `f(m)` is the perception probability function.
+where $m \ge -0.5$ denotes the difference between the limiting magnitude
+and the meteor magnitude, and $f(m)$ is the perception probability function.
 
 The estimation of the population index r, briefly called the r-value,
 is a common task in the evaluation of meteor magnitudes.
@@ -60,17 +60,22 @@ the r-value.
 Using
 
 ```{r, echo=TRUE, results='hide'}
-magnitudes <- merge(
-  observations,
-  as.data.frame(PER_2015_magn$magnitudes),
-  by = 'magn.id'
-)
-magnitudes$magn <- as.integer(as.vector(magnitudes$magn))
-head(magnitudes[magnitudes$Freq>0,], 5) # Example values
+magnitudes <- with(new.env(), {
+  magnitudes <- merge(
+    observations,
+    as.data.frame(PER_2015_magn$magnitudes),
+    by = 'magn.id'
+  )
+  magnitudes$magn <- as.integer(as.vector(magnitudes$magn))
+  subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5)
+})
+head(magnitudes, 5) # Example values
 ```
 
 we obtain a data frame with the absolute observed frequencies `Freq` for each
-observation of a magnitude class:
+observation of a magnitude class. The expression
+`subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5`
+ensures that meteors fainter than the limiting magnitude are not used if they exist.
 
 ```{r, echo=FALSE, results='asis'}
 knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
@@ -79,21 +84,19 @@ knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
 This data frame contains a total of `r sum(magnitudes$Freq)` meteors.
 This is a sufficiently large number to estimate the r-value.
 
-## Maximum Likelihood Method I
+## Maximum Likelihood Method
 
 The maximum likelihood method can be used to estimate the r-value in an unbiased manner.
 For this, the function `dvmgeom()` is needed, which returns the probability density of
 the observable meteor magnitudes when the r-value and the limiting magnitudes are known.
 
 The following algorithm estimates the r-value by maximizing the likelihood with
-the `optim()` function. The function `ll` returns the negative log-likelihood,
-as `optim()` identifies a minimum. The expression
-`subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5`
-ensures that meteors fainter than the limiting magnitude are not used if they exist.
+the `optim()` function. The function `ll()` returns the negative log-likelihood,
+as `optim()` identifies a minimum.
 
 ```{r, echo=TRUE, results='hide'}
 # maximum likelihood estimation (MLE) of r
-result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5), {
+result <- with(magnitudes, {
     # log likelihood function
     ll <- function(r) -sum(Freq * dvmgeom(magn, lim.magn, r, log=TRUE))
     r.start <- 2.0 # starting value
@@ -107,65 +110,145 @@ result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5
 This gives the expected value and the variance of the r-value:
 
 ```{r, echo=TRUE}
-r.mean <- result$par # mean of r
-print(r.mean)
-r.var <- 1/result$hessian[1][1] # variance of r
-print(r.var)
+print(result$par) # mean of r
+print(1/result$hessian[1][1]) # variance of r
 ```
 
-## Maximum Likelihood Method II
-
-With the maximum likelihood method, it can be demonstrated that the mean difference
-between meteor magnitudes and the limiting magnitude is an unbiased estimator for
-the r-value. This mean is straightforward to calculate:
-
-```{r, echo=TRUE}
-m.mean <- with(magnitudes, sum((lim.magn - magn) * Freq)/sum(Freq))
-print(m.mean)
-```
-
-Similarly, its variance is:
-
-```{r, echo=TRUE}
-m.var <- with(magnitudes, {
-    n <- sum(Freq)
-    sum((lim.magn - magn - m.mean)^2 * Freq)/((n-1) * n)
-})
-print(m.var)
-```
-
-We can easily determine the mean for an r-value using the Laplace transform
-of the perception probabilities by setting `s=log(r)`. However, since we aim
-to inversely determine the r-value from the mean value, we first generate
-the necessary values and then employ the `splinefun()` function for interpolation:
+We can additionally visualize the likelihood function here.
 
 ```{r, echo=TRUE, results='hide'}
-r.mean.fun <- with(new.env(), {
-    r <- seq(1.3, 3.5, 0.1)
-    s <- log(r)
-    m.mean <- -vmperception.l(s, deriv.degree = 1L)/vmperception.l(s)
-    splinefun(m.mean, r)
+with(new.env(), {
+  data.plot <- data.frame(r = seq(2.0, 2.8, 0.01))
+  data.plot$ll <- mapply(function(r){
+    with(magnitudes, {
+      # log likelihood function
+      sum(Freq * dvmgeom(magn, lim.magn, r, log = TRUE))
+    })
+  }, data.plot$r)
+  data.plot$l <- exp(data.plot$ll - max(data.plot$ll))
+  data.plot$l <- data.plot$l / sum(data.plot$l)
+  plot(data.plot$r, data.plot$l,
+    type = "l",
+    col = "blue",
+    xlab = "r",
+    ylab = "likelihood"
+  )
+  abline(v = result$par, col = "red", lwd = 1)
 })
 ```
 
-This approach yields the r-value as follows:
+The likelihood function is approximately a normal distribution in this case. This is important in this context because the variance of the estimated r-value is derived from the curvature (the second derivative at the maximum) of the log-likelihood function.
 
-```{r, echo=TRUE}
-r.mean <- r.mean.fun(m.mean)
-print(r.mean)
+## Variance-Stabilizing Transformation as an Alternative Method
+
+Estimation based on the maximum likelihood principle is computationally demanding.
+As an alternative, a variance-stabilizing transformation can be applied.
+This transformation maps meteor magnitudes onto a different scale,
+yielding a distribution whose variance no longer depends on the parameter `r`.
+
+The variance-stabilizing transformation has the following additional advantages:
+
+- Since the variance does not depend on the r-value, the accuracy of estimators (e.g., maximum likelihood estimators) is easier to assess,
+- The variance bound (Cramér–Rao lower bound) then often depends only on the sample size `n`, but not on the true r-value,
+- Estimators such as the sample mean are homoscedastic, i.e., their dispersion is constant across the parameter space. As a result, many classical results of linear estimation theory (BLUE properties, Gauss–Markov theorem) hold without additional transformations,
+- Because the variance is fixed, the calculation of standard errors is independent of the unknown r-value,
+- Confidence intervals can be more easily standardized and are equally well calibrated across the entire parameter space,
+- Test statistics (e.g., likelihood ratio or score tests) exhibit a more uniform distribution, since the variance does not need to be treated as an additional unknown. This improves test power and simplifies asymptotic approximations.
+
+The resulting procedure is straightforward: it suffices to compute the mean of
+the transformed meteor magnitudes, from which an estimate of the parameter `r` is obtained.
+
+```{r, echo=TRUE, results='show'}
+tm.mean <- with(magnitudes, {
+  N <- sum(Freq)
+  tm <- vmgeomVstFromMagn(magn, lim.magn)
+  tm.mean <- sum(Freq * tm)/N
+  tm.var <- sum(Freq * (tm - tm.mean)^2)/(N-1)
+  tm.mean.var <- tm.var / N
+  list('val' = tm.mean, 'var' = tm.mean.var, 'sd' = sqrt(tm.mean.var))
+})
 ```
 
-Assuming that the mean is normally distributed and that the variance of
-magnitudes `m.var` is small, we can obtain the variance of the r-value:
+Thus, one obtains the mean and the variance of the mean of `tm`.
 
-```{r, echo=TRUE}
-r.var <- r.mean.fun(m.mean, deriv = 1L)^2 * m.var
-print(r.var)
+```{r, echo=TRUE, results='show'}
+print(paste('tm mean:', tm.mean$val))
+print(paste('tm var:', tm.mean$var))
 ```
 
-The method described herein for estimating the r-value offers an advantage over
-the previous method. It is not only more straightforward to execute but also
-less computationally demanding.
+Using the bootstrap method, it can be assessed whether the mean is normally distributed.
+
+```{r, echo=TRUE, results='show'}
+# Bootstrapping Method
+tm.means <- with(magnitudes, {
+    N <- sum(Freq)
+    tm <- vmgeomVstFromMagn(magn, lim.magn)
+    replicate(50000, {
+      mean(sample(tm, size = N, replace = TRUE, prob = Freq))
+    })
+})
+```
+
+The graphical representation indicates that this is indeed approximately the case.
+
+```{r, echo=TRUE, results='show'}
+with(new.env(), {
+  tm.min <- tm.mean$val - 3 * tm.mean$sd
+  tm.max <- tm.mean$val + 3 * tm.mean$sd
+  tm.means <- subset(tm.means, tm.means > tm.min & tm.means < tm.max)
+  brks <- seq(min(tm.means) - 0.02, max(tm.means) + 0.02, by = 0.02)
+  hist(tm.means,
+    breaks = brks,
+    col = "skyblue",
+    border = "black",
+    main = "Histogram of mean tm",
+    xlab = "tm",
+    ylab = "count"
+  )
+})
+```
+
+The corresponding transformation to the r-value likewise results in an approximate normal distribution.
+
+```{r, echo=TRUE, results='show'}
+with(new.env(), {
+  tm.min <- tm.mean$val - 3 * tm.mean$sd
+  tm.max <- tm.mean$val + 3 * tm.mean$sd
+  tm.means <- subset(tm.means, tm.means > tm.min & tm.means < tm.max)
+  r <- vmgeomVstToR(tm.means)
+  brks <- seq(min(r) - 0.02, max(r) + 0.02, by = 0.02)
+  hist(r,
+    breaks = brks,
+    col = "skyblue",
+    border = "black",
+    main = "Histogram of mean r",
+    xlab = "r",
+    ylab = "count"
+  )
+  abline(v = vmgeomVstToR(tm.mean$val), col = "red", lwd = 1)
+})
+```
+
+Therefore, the first-order delta method can be applied to estimate the mean and its variance.
+
+```{r, echo=TRUE, results='hide'}
+# estimation of r
+result <- with(new.env(), {
+    r.hat  <- vmgeomVstToR(tm.mean$val)
+    dr_dtm <- vmgeomVstToR(tm.mean$val, deriv.degree = 1L)
+
+    # Delta method: variance and standard error of r.hat
+    r.var <- (dr_dtm^2) * tm.mean$var
+    list('r.hat' = r.hat, 'r.var' = r.var)
+})
+```
+
+This gives the expected value and the variance of the r-value:
+
+```{r, echo=TRUE}
+print(result$r.hat)
+print(result$r.var)
+```
 
 ## Residual Analysis
 
@@ -176,7 +259,7 @@ the expected frequencies. Then, using the estimated r-value, we retrieve the rel
 frequencies `p` for each observation and add them to the data frame `magnitudes`:
 
 ```{r, echo=TRUE, results='hide'}
-magnitudes$p <- with(magnitudes, dvmgeom(m = magn, lm = lim.magn, r.mean))
+magnitudes$p <- with(magnitudes, dvmgeom(m = magn, lm = lim.magn, result$r.hat))
 ```
 
 We must also consider the probabilities for the magnitude class with the brightest meteors.
@@ -194,7 +277,7 @@ their probability.
 idx <- magnitudes$magn == magn.min
 magnitudes$p[idx] <- with(
     magnitudes[idx,],
-    pvmgeom(m = magn + 1L, lm = lim.magn, r.mean, lower.tail = TRUE)
+    pvmgeom(m = magn + 1L, lm = lim.magn, result$r.hat, lower.tail = TRUE)
 )
 ```
 

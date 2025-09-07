@@ -1,9 +1,9 @@
 #' @name mideal
 #' @aliases dmideal
-#' @title Ideal distributed meteor magnitudes
+#' @title Ideal Distribution of Meteor Magnitudes
 #' @description
 #' Density, distribution function, quantile function and random generation
-#' of ideal distributed meteor magnitudes.
+#' for the ideal distribution of meteor magnitudes.
 #' @param psi numeric; the location parameter of a probability distribution.
 #'     It is the only parameter of the distribution.
 #' @param m numeric; meteor magnitude.
@@ -13,7 +13,7 @@
 #' @param lower.tail logical; if `TRUE` (default) probabilities are
 #'     \eqn{P[M \le m]}, otherwise, \eqn{P[M > m]}.
 #' @details
-#' The density of an ideal magnitude distribution is
+#' The density of the ideal distribution of meteor magnitudes is
 #' \deqn{
 #'     {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 #' }
@@ -35,7 +35,7 @@
 #' plot(
 #'     function(m) dmideal(m, psi, log = FALSE),
 #'     -5, 10,
-#'     main = paste0('density of ideal meteor magnitude\ndistribution (psi = ', psi, ')'),
+#'     main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
 #'     col = "blue",
 #'     xlab = 'm',
 #'     ylab = 'dp/dm'
@@ -45,7 +45,7 @@
 #' plot(
 #'     function(m) dmideal(m, psi, log = TRUE),
 #'     -5, 10,
-#'     main = paste0('density of ideal meteor magnitude\ndistribution (psi = ', psi, ')'),
+#'     main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
 #'     col = "blue",
 #'     xlab = 'm',
 #'     ylab = 'log( dp/dm )'
@@ -55,7 +55,7 @@
 #' plot(
 #'     function(m) pmideal(m, psi),
 #'     -5, 10,
-#'     main = paste0('probability of ideal meteor magnitude\ndistribution (psi = ', psi, ')'),
+#'     main = paste0('Probability of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
 #'     col = "blue",
 #'     xlab = 'm',
 #'     ylab = 'p'
@@ -65,7 +65,7 @@
 #' plot(
 #'     function(p) qmideal(p, psi),
 #'     0.01, 0.99,
-#'     main = paste('quantile of ideal meteor magnitude\n distribution (psi = ', psi, ')'),
+#'     main = paste('Quantile of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
 #'     col = "blue",
 #'     xlab = 'p',
 #'     ylab = 'm'

@@ -6,7 +6,7 @@
 \alias{pmideal}
 \alias{qmideal}
 \alias{rmideal}
-\title{Ideal distributed meteor magnitudes}
+\title{Ideal Distribution of Meteor Magnitudes}
 \usage{
 dmideal(m, psi = 0, log = FALSE)
 
@@ -42,10 +42,10 @@ of the lengths of the numerical vector arguments for the other functions.
 }
 \description{
 Density, distribution function, quantile function and random generation
-of ideal distributed meteor magnitudes.
+for the ideal distribution of meteor magnitudes.
 }
 \details{
-The density of an ideal magnitude distribution is
+The density of the ideal distribution of meteor magnitudes is
 \deqn{
     {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 }
@@ -58,7 +58,7 @@ psi <- 5.0
 plot(
     function(m) dmideal(m, psi, log = FALSE),
     -5, 10,
-    main = paste0('density of ideal meteor magnitude\ndistribution (psi = ', psi, ')'),
+    main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",
     xlab = 'm',
     ylab = 'dp/dm'
@@ -68,7 +68,7 @@ abline(v=psi, col="red")
 plot(
     function(m) dmideal(m, psi, log = TRUE),
     -5, 10,
-    main = paste0('density of ideal meteor magnitude\ndistribution (psi = ', psi, ')'),
+    main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",
     xlab = 'm',
     ylab = 'log( dp/dm )'
@@ -78,7 +78,7 @@ abline(v=psi, col="red")
 plot(
     function(m) pmideal(m, psi),
     -5, 10,
-    main = paste0('probability of ideal meteor magnitude\ndistribution (psi = ', psi, ')'),
+    main = paste0('Probability of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",
     xlab = 'm',
     ylab = 'p'
@@ -88,7 +88,7 @@ abline(v=psi, col="red")
 plot(
     function(p) qmideal(p, psi),
     0.01, 0.99,
-    main = paste('quantile of ideal meteor magnitude\n distribution (psi = ', psi, ')'),
+    main = paste('Quantile of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",
     xlab = 'p',
     ylab = 'm'

@@ -90,18 +90,6 @@ test_that("dvmgeom", {
     est <- optim(1, ll, method='Brent', lower=0.01, upper=4, hessian=TRUE)
     expect_equal(round(est$par, 6), round(base::log(r), 6))
 
-    # test q value of meteor magnitudes
-    lm <- 5.8
-    m <- as.integer(seq(8, -100, -1))
-    p <- vismeteor::dvmgeom(m, lm, r)
-    q.fun <- function(m) {
-        q <- rep(0.0, length(m))
-        idx <- m > -0.5
-        q[idx] <- vismeteor::vmperception(m[idx], deriv = TRUE)/vismeteor::vmperception(m[idx])
-        q
-    }
-    expect_true(abs(r - exp(sum(p * q.fun(lm - m)))) < 0.01)
-
     # density of meteor magnitudes equals geometric distribution
     perception.const <- function(m, log = FALSE) {
         rep(ifelse(log, 0.0, 1.0), length(m))

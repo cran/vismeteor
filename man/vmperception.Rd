@@ -4,21 +4,16 @@
 \alias{vmperception}
 \title{Perception Probabilities of Visual Meteor Magnitudes}
 \usage{
-vmperception(m, deriv.degree = 0L)
+vmperception(m)
 }
 \arguments{
 \item{m}{numerical; difference between the limiting magnitude and the meteor magnitude.}
-
-\item{deriv.degree}{integer; degree of derivative of the perception probability.
-Currently, valid values of \code{deriv.degree} are \code{0}, \code{1} and \code{2}.}
 }
 \value{
 This function returns the visual perception probabilities.
-If \code{deriv.degree} is specified, it will return the \code{deriv.degree}-th order derivative
-of the perception probability.
 }
 \description{
-Provides the perception probability of visual meteor magnitudes and its first derivative.
+Provides the perception probability of visual meteor magnitudes.
 }
 \details{
 The perception probabilities of \emph{Koschack R., Rendtel J., 1990b}
@@ -31,7 +26,7 @@ are estimated with the formula
 }
 where
 \deqn{
-z(x) = 0.003 \, x + 0.0056 \, x^2 + 0.0014 \, x^4
+z(x) = 0.0037 \, x + 0.0019 \, x^2 + 0.00271 \, x^3 + 0.0009 \, x^4
 }
 and \code{m} is the difference between the limiting magnitude and the meteor magnitude.
 }
@@ -52,20 +47,6 @@ plot(
     col = "blue",
     xlab = 'm',
     ylab = 'p'
-)
-plot(
-    function(m) {
-        vmperception(m, deriv.degree=1L)/vmperception(m)
-    },
-    -0.3, 8,
-    main = paste(
-        'q-values of',
-        'visual meteor magnitudes'
-    ),
-    col = "blue",
-    log = 'y',
-    xlab = 'm',
-    ylab = 'q'
 )
 
 par(old_par)

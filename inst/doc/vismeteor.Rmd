@@ -33,13 +33,13 @@ meteors. It takes into account human perception of different meteor magnitudes t
 perception probabilities. Therefore, this package provides methods that incorporate
 these perception probabilities in the evaluation of meteor magnitudes.
 
-Perception probabilities are crucial in analyzing the observed magnitude distributions,
-leading to specific magnitude distributions unique to visual meteor observations.
-A popular distribution is the Visual Geometric Magnitude Distribution.
-This is a standard geometric distribution adjusted by multiplying its densities with
-the perception probabilities. The result is a distribution whose sole parameter is
-the Population Index r.
-This package enables users to work with this specially adjusted distribution.
+Perception probabilities are crucial for analyzing observed magnitude distributions,
+as they give rise to specific distributions unique to visual meteor observations.
+One such model is the Geometric Model of Visual Meteor Magnitudes.
+It is based on the standard geometric distribution, adjusted by multiplying its probabilities with
+the perception probabilities. The resulting distribution has a single parameter:
+the population index r.
+This package provides functions to work with this adjusted distribution.
 
 Additionally, this package offers tools to facilitate the evaluation, recognizing that
 visual meteor observations typically report only total counts over a specified period,
@@ -74,20 +74,22 @@ their own empirical data or models into the analysis.
 
 See `?vmperception` and `?vmperception.l` for more information.
 
-## Geometric magnitude distribution
+## Geometric Model of Visual Meteor Magnitudes
 
-In visual meteor observation, it is common to estimate meteor magnitudes in integer values.
-Hence, the geometric magnitude distribution is discrete and has the density:
+In visual meteor observations, magnitudes are typically recorded as integer values.  
+Hence, the geometric model is discrete and its probability mass function is
 $$
     {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
 $$
-where $x \ge -0.5$ represents the difference between the limiting magnitude and the
-meteor magnitude, and $f(x)$ is the perception probability function. This distribution
-is a product of the perception probabilities with the actual geometric distribution of
-the meteor magnitudes. Therefore, the parameter $p$ of the geometric distribution is $p=1−1/r$.
+where $x \ge -0.5$ denotes the difference between the limiting magnitude and the
+meteor magnitude, and $f(x)$ is the perception probability function.  
+This distribution is the product of the perception probabilities and the
+underlying geometric distribution of meteor magnitudes.  
+Therefore, the parameter $p$ of the geometric distribution is $p = 1 - 1/r$.
 
-The advantage of this model is its simplicity. When the number of observed meteors is low,
-it can often be shown that the distribution of meteor magnitudes corresponds to this model.
+The main advantage of this model is its simplicity.  
+When the number of observed meteors is small, it can often be shown that the
+distribution of meteor magnitudes is well described by this model.
 
 ```{r, echo=TRUE, results='hide'}
 m <- seq(6, -4, -1)
@@ -109,16 +111,16 @@ axis(side = 2, at = pretty(p))
 
 See `?vmgeom` for more information.
 
-## Ideal magnitude distribution
+## Ideal Distribution of Meteor Magnitudes
 
-The ideal magnitude distribution is an alternative model to the geometric magnitude distribution.
-It more accurately reflects the finiteness of meteor magnitudes across the entire magnitude
-spectrum, drawing upon the model of an ideal gas from theoretical physics as a conceptual analogy.
+The ideal model of visual meteor magnitudes is an alternative to the geometric model.
+It more accurately accounts for the finiteness of meteor magnitudes across the entire
+magnitude spectrum, using the ideal gas from theoretical physics as a conceptual analogy.
 
-This model is particularly useful when, compared to the geometric distribution, fewer faint meteor
-magnitudes have been observed.
+This model is particularly useful when, compared to the geometric model,
+fewer faint meteor magnitudes are observed.
 
-The density of an ideal magnitude distribution is
+The density of the ideal distribution is
 
 $$
 {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}

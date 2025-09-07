@@ -1,5 +1,5 @@
 ---
-title: "Parameter Estimation of the Ideal Magnitude Distribution"
+title: "Parameter Estimation of the Ideal Distribution of Visual Meteor Magnitudes"
 date: "`r Sys.Date()`"
 output:
     rmarkdown::html_vignette:
@@ -7,7 +7,7 @@ output:
         fig_width: 6
         fig_height: 4
 vignette: >
-  %\VignetteIndexEntry{Parameter Estimation of the Ideal Magnitude Distribution}
+  %\VignetteIndexEntry{Parameter Estimation of the Ideal Distribution of Visual Meteor Magnitudes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-The density of an ideal magnitude distribution is
+The density of the ideal distribution of meteor magnitudes is
 
 $$
     {\displaystyle f(m) = \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
@@ -37,7 +37,7 @@ $$
    {\displaystyle P[M = m] \sim g(m) \, \int_{m-0.5}^{m+0.5} f(m) \, \, \mathrm{d}m} \, \mathrm{,}
 $$
 where $g(m)$ is the perception probability function. This distribution is thus a product of the
-perception probabilities and the actual ideal distribution of the meteor magnitudes.
+perception probabilities and the actual ideal distribution of meteor magnitudes.
 
 Here we demonstrate a method for an unbiased estimation of $\psi$.
 
@@ -73,13 +73,15 @@ magnitudes <- with(new.env(), {
       by = 'magn.id'
   )
   magnitudes$magn <- as.integer(as.character(magnitudes$magn))
-  magnitudes
+  subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5)
 })
 head(magnitudes[magnitudes$Freq>0,], 5) # Example values
 ```
 
 we obtain a data frame with the absolute observed frequencies `Freq` for each
-observation of a magnitude class:
+observation of a magnitude class. The expression
+`subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5`
+ensures that meteors fainter than the limiting magnitude are not used if they exist.
 
 ```{r, echo=FALSE, results='asis'}
 knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
@@ -88,6 +90,7 @@ knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
 This data frame contains a total of `r sum(magnitudes$Freq)` meteors.
 This is a sufficiently large number to estimate the parameter.
 
+
 ## Maximum Likelihood Method
 
 The maximum likelihood method can be used to estimate the parameter in an unbiased manner.
@@ -95,18 +98,16 @@ For this, the function `dvmideal()` is needed, which returns the probability den
 the observable meteor magnitudes when the parameter and the limiting magnitudes are known.
 
 The following algorithm estimates the parameter by maximizing the likelihood with
-the `optim()` function. The function `ll` returns the negative log-likelihood,
-as `optim()` identifies a minimum. The expression
-`subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5`
-ensures that meteors fainter than the limiting magnitude are not used if they exist.
+the `optim()` function. The function `ll()` returns the negative log-likelihood,
+as `optim()` identifies a minimum.
 
 ```{r, echo=TRUE, results='hide'}
 # maximum likelihood estimation (MLE) of psi
-result <- with(subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5), {
+result <- with(magnitudes, {
     # log likelihood function
     ll <- function(psi) -sum(Freq * dvmideal(magn, lim.magn, psi, log=TRUE))
-    psi.start <- 5.0 # starting value
-    psi.lower <- 0.0 # lowest expected value
+    psi.start <- 6.0 # starting value
+    psi.lower <- 4.0 # lowest expected value
     psi.upper <- 10.0 # highest expected value
     # find minimum
     optim(psi.start, ll, method='Brent', lower=psi.lower, upper=psi.upper, hessian=TRUE)
@@ -118,8 +119,153 @@ This gives the expected value and the variance of the parameter:
 ```{r, echo=TRUE}
 psi.mean <- result$par # mean of psi
 print(psi.mean)
-psi.var <- 1/result$hessian[1][1] # variance of r
+psi.var <- 1/result$hessian[1][1] # variance of psi
 print(psi.var)
+```
+
+We can additionally visualize the likelihood function here.
+
+```{r, echo=TRUE, results='hide'}
+with(new.env(), {
+  data.plot <- data.frame(psi = seq(4.0, 11, 0.1))
+  data.plot$ll <- mapply(function(psi){
+    with(magnitudes, {
+      # log likelihood function
+      sum(Freq * dvmideal(magn, lim.magn, psi, log=TRUE))
+    })
+  }, data.plot$psi)
+  data.plot$l <- exp(data.plot$ll - max(data.plot$ll))
+  data.plot$l <- data.plot$l / sum(data.plot$l)
+  plot(data.plot$psi, data.plot$l,
+    type = "l",
+    col = "blue",
+    xlab = "psi",
+    ylab = "likelihood"
+  )
+  abline(v = result$par, col = "red", lwd = 1)
+})
+```
+
+It is clearly visible that the likelihood function is not normally distributed.
+This distribution even belongs to the class of heavy-tailed distributions.
+While its maximum is indeed an unbiased estimator, this does not hold for the variance.
+This is important in this context because the variance of the estimated $\psi$-value is derived from the curvature (the second derivative at the maximum) of the log-likelihood function.
+Therefore, the estimator for the variance of $\psi$ is far too small.
+
+## Variance-Stabilizing Transformation as an Alternative Method
+
+Estimation based on the maximum likelihood principle is computationally demanding.
+As an alternative, a variance-stabilizing transformation can be applied.
+This transformation maps meteor magnitudes onto a different scale,
+yielding a distribution whose variance no longer depends on the parameter $\psi$.
+
+The variance-stabilizing transformation has the following additional advantages:
+
+- Since the variance does not depend on $\psi$, the accuracy of estimators (e.g., maximum likelihood estimators) is easier to assess,
+- The variance bound (Cramér–Rao lower bound) then often depends only on the sample size `n`, but not on the true value of $\psi$,
+- Estimators such as the sample mean are homoscedastic, i.e., their dispersion is constant across the parameter space. As a result, many classical results of linear estimation theory (BLUE properties, Gauss–Markov theorem) hold without additional transformations,
+- Because the variance is fixed, the calculation of standard errors is independent of the unknown value of $\psi$,
+- Confidence intervals can be more easily standardized and are equally well calibrated across the entire parameter space,
+- Test statistics (e.g., likelihood ratio or score tests) exhibit a more uniform distribution, since the variance does not need to be treated as an additional unknown. This improves test power and simplifies asymptotic approximations.
+
+The resulting procedure is straightforward: it suffices to compute the mean of
+the transformed meteor magnitudes, from which an estimate of the parameter $\psi$ is obtained.
+
+```{r, echo=TRUE, results='show'}
+tm.mean <- with(magnitudes, {
+  N <- sum(Freq)
+  tm <- vmidealVstFromMagn(magn, lim.magn)
+  tm.mean <- sum(Freq * tm)/N
+  tm.var <- sum(Freq * (tm - tm.mean)^2)/(N-1)
+  tm.mean.var <- tm.var / N
+  list('val' = tm.mean, 'var' = tm.mean.var, 'sd' = sqrt(tm.mean.var))
+})
+```
+
+Thus, one obtains the mean and the variance of the mean of `tm`.
+
+```{r, echo=TRUE, results='show'}
+print(paste('tm mean:', tm.mean$val))
+print(paste('tm var:', tm.mean$var))
+```
+
+Using the bootstrap method, it can be assessed whether the mean is normally distributed.
+
+
+
+```{r, echo=TRUE, results='show'}
+tm.means <- with(magnitudes, {
+    N <- sum(Freq)
+    tm <- vmidealVstFromMagn(magn, lim.magn)
+    replicate(50000, {
+      mean(sample(tm, size = N, replace = TRUE, prob = Freq))
+    })
+})
+```
+
+The graphical representation indicates that this is indeed approximately the case.
+
+```{r, echo=TRUE, results='show'}
+with(new.env(), {
+  tm.min <- tm.mean$val - 3 * tm.mean$sd
+  tm.max <- tm.mean$val + 3 * tm.mean$sd
+  tm.means <- subset(tm.means, tm.means > tm.min & tm.means < tm.max)
+  brks <- seq(min(tm.means) - 0.02, max(tm.means) + 0.02, by = 0.02)
+  hist(tm.means,
+    breaks = brks,
+    col = "skyblue",
+    border = "black",
+    main = "Histogram of mean tm",
+    xlab = "tm",
+    ylab = "count",
+    xaxt = "n"
+  )
+  axis(1, at = seq(round(min(brks), 1), round(max(brks), 1) + 0.1, by = 0.1))
+  abline(v = 0, col = "red", lwd = 1)
+})
+```
+
+A mean value of `0.0` implies that $\psi$ lies at infinity.
+Negative values can be interpreted as a kind of “beyond infinity”, which is not meaningful.
+There are two possible explanations:
+
+1. The distribution is not ideal, i.e., the observations do not fit the model as described above.
+2. Random variation led to this result.
+
+Although the expected value is clearly above `0.0` and can therefore be used, it is more appropriate
+in this context to interpret the value as the median:
+
+```{r, echo=TRUE}
+lim.magn.mean <- with(magnitudes, {
+    N <- sum(Freq)
+    sum(Freq * lim.magn)/N
+})
+print(paste('lim.magn.mean:', lim.magn.mean))
+print(paste('mean psi:', vmidealVstToPsi(tm.mean$val, lim.magn.mean)))
+```
+
+The mean limiting magnitude `lim.magn.mean` is required to estimate the location parameter $\psi$.
+In visual meteor observations, different limiting magnitudes usually occur.
+In practice, the observed quantity is the difference between $\psi$ and the limiting magnitude
+for each observation. Since $\psi$ is unknown, one must assume that the mean `tm` is correlated
+with the limiting magnitude.
+
+If this correlation can be described by a simple linear regression, the mean limiting magnitude serves as
+a reliable reference point for estimating $\psi$. This is typically the case when the limiting magnitudes
+of the individual observations differ only slightly, or $\psi$ is smaller than or equal to
+the limiting magnitudes.
+
+By contrast, if $\psi$ is significantly larger than the limiting magnitude, estimation becomes problematic:
+$\psi$ effectively tends to infinity, and the observable magnitude distribution approaches
+the geometric model of visual meteor magnitudes with a population index of $r \approx 2.5$.
+
+Nevertheless, if all observations share the same limiting magnitude, the procedure yields an exact estimate.
+
+In practice, however, it is preferable to use a confidence interval estimate.
+For example, one can estimate that $\psi$ is, with 10 percent probability, not smaller than:
+
+```{r, echo=TRUE}
+print(vmidealVstToPsi(qnorm(0.90, tm.mean$val, tm.mean$sd), lim.magn.mean))
 ```
 
 ## Residual Analysis
@@ -131,6 +277,7 @@ the expected frequencies. Then, using the estimated parameter, we retrieve the r
 frequencies `p` for each observation and add them to the data frame `magnitudes`:
 
 ```{r, echo=TRUE, results='asis'}
+psi.mean <- vmidealVstToPsi(tm.mean$val, lim.magn.mean)
 magnitudes$p <- with(magnitudes, dvmideal(m = magn, lm = lim.magn, psi.mean))
 ```
 
@@ -166,7 +313,7 @@ magnitutes.observed.mt <- margin.table(magnitutes.observed, margin = 2)
 print(magnitutes.observed.mt)
 ```
 
-Next, we check which magnitude classes need to be aggegated so that each contains
+Next, we check which magnitude classes need to be aggregated so that each contains
 at least 10 meteors, allowing us to perform a Chi-Square goodness-of-fit test.
 
 The last output shows that meteors of magnitude class `0` or brighter must be combined into
@@ -205,9 +352,9 @@ print(chisq.test.result$p.value)
 
 If we set the level of significance at 5 percent, then it is clear that the p-value with
 `r chisq.test.result$p.value` is greater than 0.05. Thus, under the assumption that the
-magnitude distribution follows an ideal meteor magnitude distribution and assuming that
+magnitude distribution follows the ideal meteor magnitude distribution and that
 the perception probabilities are correct (i.e., error-free or precisely known),
-the assumptions cannot be rejected. However, the converse is not true; the assumptions
+these assumptions cannot be rejected. However, the converse is not true; the assumptions
 may not necessarily be correct. The total count of meteors here is too small for such
 a conclusion.
 

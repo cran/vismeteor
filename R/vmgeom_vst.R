@@ -48,7 +48,13 @@
 #' The argument `deriv.degree` can be used to apply the delta method.  
 #' If `log = TRUE`, the logarithm of `r` is returned.
 #'
-#' @seealso [vismeteor::vmgeom]
+#' @note
+#' The internal approximations used here are derived from the perception
+#' probabilities produced by [vismeteor::vmperception].
+#' For details on the derivation, see the script `inst/derivation/vmgeom_vst.R` in the
+#' package's source code.
+#'
+#' @seealso [vismeteor::vmgeom] [vismeteor::vmperception]
 #' @examples
 #' N <- 100
 #' r <- 2.0
@@ -79,9 +85,7 @@
 #' print(r.hat)
 #' print(se_r.hat)
 
-#' @rdname vmgeomVst
-#' @export
-vmgeomVstFromMagn <- function(m, lm) {
+.vmgeomVstFromMagn.params <- (function() {
     param.df <- data.frame(
         offset = c(-0.5, -0.48, -0.45, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.45, 0.48, 0.5),
         a = c(8.810993, 8.496702, 8.29026, 8.140408, 8.031893, 8.024524, 8.046554, 8.093328, 8.165077, 8.265932, 8.384126, 8.564082, 8.678373, 8.757368, 8.811488),
@@ -90,21 +94,27 @@ vmgeomVstFromMagn <- function(m, lm) {
         d = c(0.669, 0.748, 0.813, 0.872, 0.922, 0.934, 0.928, 0.91, 0.881, 0.843, 0.796, 0.739, 0.706, 0.684, 0.669)
     )
 
+    list(
+        pa.fun = stats::approxfun(param.df$offset, param.df$a),
+        pb.fun = stats::approxfun(param.df$offset, param.df$b),
+        pc.fun = stats::approxfun(param.df$offset, param.df$c),
+        pd.fun = stats::approxfun(param.df$offset, param.df$d)
+    )
+})()
+
+#' @rdname vmgeomVst
+#' @export
+vmgeomVstFromMagn <- function(m, lm) {
     offset <- lm - round(lm)
     if (1L == length(lm)) {
         limmag <- rep(lm, length(m))
         offset <- rep(offset, length(m))
     }
 
-    pa.fun <- stats::approxfun(param.df$offset, param.df$a)
-    pb.fun <- stats::approxfun(param.df$offset, param.df$b)
-    pc.fun <- stats::approxfun(param.df$offset, param.df$c)
-    pd.fun <- stats::approxfun(param.df$offset, param.df$d)
-
-    a <- pa.fun(offset)
-    b <- pb.fun(offset)
-    c <- pc.fun(offset)
-    d <- pd.fun(offset)
+    a <- .vmgeomVstFromMagn.params$pa.fun(offset)
+    b <- .vmgeomVstFromMagn.params$pb.fun(offset)
+    c <- .vmgeomVstFromMagn.params$pc.fun(offset)
+    d <- .vmgeomVstFromMagn.params$pd.fun(offset)
 
     x <- lm - m
     a - exp(b + c * (x + 0.5)^d)

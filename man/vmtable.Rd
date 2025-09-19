@@ -29,8 +29,18 @@ the restriction that the deviation is at most \eqn{\pm 0.5}.
 If the total sum of a meteor magnitude is integer,
 then the deviation is \eqn{\pm 0}.
 
-The algorithm is asymptotic. This means that the more meteors the table contains,
-the more unbiased is the result of the rounding.
+The algorithm is unbiased: for a fixed observation order it preserves the original
+totals without introducing systematic drift, even though each run follows the
+deterministic sequence dictated by the observed counts and their ordering.
+}
+\note{
+Internally the counts are doubled to half-meteor units, leftover halves are
+alternated between rows so column margins stay within \eqn{\pm 0.5}, and when the
+grand total is odd the matrix is temporarily mirrored so the unavoidable surplus
+meteor originates from the opposite end of the magnitude scale rather than always
+favouring the faintest bin. The mirroring is only the initial condition; the loop
+then processes the table cell by cell so the rounding direction alternates between
+bright and faint magnitudes depending on the current row and column state.
 }
 \examples{
 # For example, create a contingency table of meteor magnitudes

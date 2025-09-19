@@ -1,3 +1,14 @@
+# vismeteor 2.0.1
+
+## Changes
+
+- Updated README guidance, vignettes, and roxygen references to clarify data sources, models, and to correct documentation errors.
+- Improved the performance of `vmgeomVstFromMagn()` and `vmidealVstFromMagn()` by tightening the interpolation steps used during the variance-stabilising transforms.
+- Streamlined the `vmtable()` rounding routine to reduce allocations.
+- Added a GitHub Actions workflow to run package checks automatically.
+- Documented the derivation scripts in `inst/derivation/` to improve reproducibility.
+- Added `load_vmdb()` regression tests.
+
 # vismeteor 2.0.0
 
 ## Highlights

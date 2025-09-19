@@ -1,8 +1,69 @@
+##
+## Script for deriving/validating the approximation of perception probabilities
+## g(m) used in vmgeom/vmideal likelihoods.
+##
+## Purpose
+## - Provide a smooth parametric approximation g(m) to empirical perception
+##   probabilities as a function of magnitude m.
+## - Use a simple polynomial inside an exponential form so that
+##   g(m) = 1 - exp(-f(m+0.5)), which is numerically stable and monotone.
+## - Calibrate coefficients by matching moments/MLE behavior under vmgeom and
+##   vmideal to those obtained from an empirical table (p.fun).
+## - Visualize g(m), its derivative g'(m), and q(m) = g'(m)/g(m).
+##
+## Contents
+## - perception.fun(): evaluates g(m) and optionally its derivative using a
+##   polynomial f on m+0.5; coefficients are passed explicitly.
+## - p.fun: piecewise‑linear interpolation of empirical probabilities.
+## - coef.model: pre‑tuned polynomial coefficients (log‑scale tuning optional).
+## - model.geom.fun()/model.ideal.fun(): compare moment/MLE behavior using
+##   the fitted g against the empirical p.fun for vmgeom/vmideal.
+## - Plots: g(m), g'(m), and q(m) on log‑scaled y‑axes for diagnostics.
+##
+## Usage / workflow
+## 1. Run the script once end-to-end to reproduce the diagnostics. Toggle the
+##    optimisation block (`if (FALSE)`) only when recalibrating the polynomial
+##    coefficients; optimisation can take several minutes.
+## 2. After updating `coef.model`, copy the rounded coefficients (including the
+##    leading zero term) into `R/perception.R` where `vmperception()` is defined.
+##    The function expects coefficients in ascending power order.
+## 3. Rebuild the package (`devtools::load_all()`) and rerun perception-related
+##    tests or models that rely on `vmperception` to ensure behaviour is
+##    unchanged or improved.
+##
+## Output locations in the package
+## - `coef.model` → polynomial coefficients in `R/perception.R`.
+## - The helper functions `model.geom.fun()` and `model.ideal.fun()` provide
+##   diagnostic tables only; they are not stored automatically.
+## - Plot sections print ggplot objects for manual inspection; no files are
+##   written by default.
+##
+## Dependencies
+## - Requires 'vismeteor' (dvmgeom, dvmideal, f.polynomial, f.polynomial.coef)
+##   and ggplot2 for plots.
+##
+## Notes on execution
+## - The if (FALSE) block holds an optimization that can be used to refine
+##   coef.model by minimizing squared errors in mean magnitudes for both
+##   vmgeom and vmideal models; it is disabled by default.
+## - Coefficients provided in coef.model are used as‑is for reproducibility.
+##
 # Approximation of perception probabilities
 library(vismeteor)
 library(ggplot2)
 
-# exact like vmperception(), but with polynomial coefficients as argument
+#' Perception probability model g(m) with optional derivative
+#'
+#' Evaluates g(m) = 1 - exp(-f(m+0.5)), where f is a polynomial with
+#' coefficients 'poly.coef'. If deriv.degree = 1, returns g'(m).
+#'
+#' Arguments
+#' - poly.coef: numeric coefficients of f in ascending power order.
+#' - m: numeric vector of magnitudes.
+#' - deriv.degree: 0 for g(m), 1 for g'(m); higher orders not implemented.
+#'
+#' Returns
+#' - Numeric vector of g(m) or g'(m).
 perception.fun <- function(poly.coef, m, deriv.degree = 0L) {
     names(poly.coef) <- seq(along = poly.coef) # exponents
 
@@ -10,12 +71,12 @@ perception.fun <- function(poly.coef, m, deriv.degree = 0L) {
     p <- rep(0.0, length(m))
     idx <- m > .Machine$double.eps
     if (any(idx)) {
-        f0 <- f.polynomial(m[idx], poly.coef)
+        f0 <- vismeteor:::f.polynomial(m[idx], poly.coef)
         if (0L == deriv.degree) {
             p[idx] <- 1.0 - exp(-f0)
         } else if (1L == deriv.degree) {
-            poly.coef1 <- f.polynomial.coef(poly.coef, deriv.degree = 1L)
-            f1 <- f.polynomial(m[idx], poly.coef1)
+            poly.coef1 <- vismeteor:::f.polynomial.coef(poly.coef, deriv.degree = 1L)
+            f1 <- vismeteor:::f.polynomial(m[idx], poly.coef1)
             p[idx] <- exp(-f0) * f1
         } else {
             stop('Not implemented')
@@ -40,9 +101,12 @@ p.fun <- approxfun(data$m, data$p, yleft = 0.0, yright = 1.0)
 limmag <- seq(5.6, 6.4, 0.2)
 
 # coef.model <- c(0.00373590946848783, 0.00189710356299022, 0.00271083620131325, 0.000899903791081514)
+# After tuning, copy the rounded coefficients (plus the implicit zero intercept)
+# into `R/perception.R::vmperception`.
+# Set the working polynomial coefficients for g(m).
 coef.model <- c(0.0037, 0.0019, 0.00271, 0.0009)
 
-# estimate parameters
+# Estimate coefficients (optional calibration)
 if (FALSE) {
     coef.model <- with(new.env(), {
         r <- seq(1.4, 3.5, 0.1)
@@ -93,6 +157,8 @@ if (FALSE) {
             )
         }
 
+        # Objective: match mean magnitudes derived with empirical p.fun and
+        # with perception.fun using exp(params) to keep coefficients positive.
         f <- function(params) {
             model.geom <- model.geom.fun(exp(params), r = r)
             model.ideal <- model.ideal.fun(exp(params), psi = psi)
@@ -109,6 +175,10 @@ if (FALSE) {
 names(coef.model) <- seq(along = coef.model) # exponents
 print(paste(c('coef model:', paste(coef.model, collapse = ', '))))
 
+#' Compare vmgeom behavior using empirical vs. modeled perception
+#'
+#' Returns a data.frame with original vs. modeled means and the MLE of r under
+#' the modeled perception, including Hessian‑based variance proxy.
 model.geom.fun <- function(poly.coef, r) {
     m <- seq(-200, 6, 1)
     vmperception.local <- function(m, deriv.degree = 0L) {
@@ -123,7 +193,7 @@ model.geom.fun <- function(poly.coef, r) {
             p.org <- dvmgeom(m, limmag, r, perception.fun = p.fun)
             p.est <- dvmgeom(m, limmag, r, perception.fun = vmperception.local)
 
-            # maximum likelihood estimation (MLE) of r
+            # Maximum likelihood estimation (MLE) of r
             llr <- function(r) {
                 -sum(p.org * dvmgeom(m, limmag, r, log=TRUE, perception.fun = vmperception.local))
             }
@@ -145,6 +215,10 @@ model.geom.fun <- function(poly.coef, r) {
     )
 }
 
+#' Compare vmideal behavior using empirical vs. modeled perception
+#'
+#' Returns a data.frame with original vs. modeled means and the MLE of psi under
+#' the modeled perception, including Hessian‑based variance proxy.
 model.ideal.fun <- function(poly.coef, psi) {
     m <- seq(-200, 6, 1)
     vmperception.local <- function(m, deriv.degree = 0L) {
@@ -159,7 +233,7 @@ model.ideal.fun <- function(poly.coef, psi) {
             p.org <- dvmideal(m, limmag, psi, perception.fun = p.fun)
             p.est <- dvmideal(m, limmag, psi, perception.fun = vmperception.local)
 
-            # maximum likelihood estimation (MLE) of r
+            # Maximum likelihood estimation (MLE) of psi
             llr <- function(psi) {
                 -sum(p.org * dvmideal(m, limmag, psi, log=TRUE, perception.fun = vmperception.local))
             }
@@ -192,7 +266,7 @@ if (TRUE) {
     })
 }
 
-# print g
+# Plot g(m)
 if (TRUE) {
     with(new.env(), {
         m.idx <- data$m > -0.5
@@ -222,7 +296,7 @@ if (TRUE) {
     })
 }
 
-# print g'
+# Plot g'(m)
 if (TRUE) {
     with(new.env(), {
         m <- c(-0.499, seq(-0.45, 8.5, 0.05))
@@ -249,7 +323,7 @@ if (TRUE) {
     })
 }
 
-# print q
+# Plot q(m) = g'(m) / g(m)
 if (TRUE) {
     with(new.env(), {
         m <- seq(-0.4, 8.4, 0.05)

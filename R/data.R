@@ -3,7 +3,8 @@
 #' @keywords data
 #' @title Visual rate observations of Perseids from 2015
 #' @description
-#' Visual rate and magnitude observations of the Perseid shower from 2015.
+#' Visual rate observations of the Perseid shower from 2015.
+#' @format A list with the same structure as returned by [vismeteor::load_vmdb_rates].
 #' @details
 #' `PER_2015_rates` are rate observations loaded with [vismeteor::load_vmdb_rates].
 #' @seealso [vismeteor::load_vmdb]
@@ -15,6 +16,7 @@ NULL
 #' @title Visual magnitude observations of Perseids from 2015
 #' @description
 #' Visual magnitude observations of the Perseid shower from 2015.
+#' @format A list with the same structure as returned by [vismeteor::load_vmdb_magnitudes].
 #' @details
 #' `PER_2015_magn` are magnitude observations loaded with
 #' [vismeteor::load_vmdb_magnitudes].

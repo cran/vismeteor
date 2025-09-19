@@ -4,6 +4,9 @@
 \name{PER_2015_magn}
 \alias{PER_2015_magn}
 \title{Visual magnitude observations of Perseids from 2015}
+\format{
+A list with the same structure as returned by \link{load_vmdb_magnitudes}.
+}
 \description{
 Visual magnitude observations of the Perseid shower from 2015.
 }

@@ -66,7 +66,7 @@ magnitudes <- with(new.env(), {
     as.data.frame(PER_2015_magn$magnitudes),
     by = 'magn.id'
   )
-  magnitudes$magn <- as.integer(as.vector(magnitudes$magn))
+  magnitudes$magn <- as.integer(as.character(magnitudes$magn))
   subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5)
 })
 head(magnitudes, 5) # Example values

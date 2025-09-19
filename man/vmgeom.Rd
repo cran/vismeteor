@@ -45,6 +45,7 @@ Default is \link{vmperception}.}
 
 The length of the result is determined by \code{n} for \code{rvmgeom}, and by the maximum
 of the lengths of the numeric vector arguments for the other functions.
+All arguments are vectorized; standard R recycling rules apply.
 
 Since the distribution is discrete, \code{qvmgeom} and \code{rvmgeom} always return integer values.
 \code{qvmgeom} may return \code{NaN} with a warning.
@@ -77,8 +78,6 @@ If a perception probability function \code{perception.fun} is provided,
 it must have the signature \verb{function(x)} and return the perception probability of
 the difference \code{x} between the limiting magnitude and the meteor magnitude.
 If \code{x >= 15.0}, the function \code{perception.fun} should return a perception probability of \code{1.0}.
-If \code{log = TRUE} is specified, the logarithm of the perception probabilities
-must be returned.
 The argument \code{perception.fun} is resolved using \link{match.fun}.
 }
 \examples{

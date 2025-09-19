@@ -6,6 +6,22 @@ This R package provides tools for the analysis of visual meteor observations fro
 
 The data used in this package are provided by [imo-vmdb](https://pypi.org/project/imo-vmdb/). But it is also possible to perform analyses without using this data.
 
+## Installation
+
+Install the released version from CRAN:
+
+```r
+install.packages("vismeteor")
+```
+
+## Getting Started
+
+Explore the vignettes for full workflows and methodology:
+
+- `vignette("vismeteor")` – package overview and concepts
+- `vignette("vmgeom")` – parameter estimation for the geometric model
+- `vignette("vmideal")` – parameter estimation for the ideal distribution
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.

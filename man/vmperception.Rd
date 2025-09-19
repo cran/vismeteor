@@ -7,7 +7,7 @@
 vmperception(m)
 }
 \arguments{
-\item{m}{numerical; difference between the limiting magnitude and the meteor magnitude.}
+\item{m}{numeric; difference between the limiting magnitude and the meteor magnitude.}
 }
 \value{
 This function returns the visual perception probabilities.

@@ -4,8 +4,11 @@
 \name{PER_2015_rates}
 \alias{PER_2015_rates}
 \title{Visual rate observations of Perseids from 2015}
+\format{
+A list with the same structure as returned by \link{load_vmdb_rates}.
+}
 \description{
-Visual rate and magnitude observations of the Perseid shower from 2015.
+Visual rate observations of the Perseid shower from 2015.
 }
 \details{
 \code{PER_2015_rates} are rate observations loaded with \link{load_vmdb_rates}.

@@ -11,6 +11,16 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
+## ----echo=TRUE----------------------------------------------------------------
+plot(
+  vmperception,
+  -0.5, 8,
+  main = "Perception probability of visual meteor magnitudes",
+  col = "blue",
+  xlab = "limiting magnitude - meteor magnitude",
+  ylab = "p"
+)
+
 ## ----echo=TRUE, results='hide'------------------------------------------------
 m <- seq(6, -4, -1)
 limmag <- 6.5

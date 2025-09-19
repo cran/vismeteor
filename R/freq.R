@@ -68,8 +68,18 @@ freq.quantile <- function(freq, min) {
 #' If the total sum of a meteor magnitude is integer,
 #' then the deviation is \eqn{\pm 0}.
 #'
-#' The algorithm is asymptotic. This means that the more meteors the table contains,
-#' the more unbiased is the result of the rounding.
+#' The algorithm is unbiased: for a fixed observation order it preserves the original
+#' totals without introducing systematic drift, even though each run follows the
+#' deterministic sequence dictated by the observed counts and their ordering.
+#'
+#' @note Internally the counts are doubled to half-meteor units, leftover halves are
+#' alternated between rows so column margins stay within \eqn{\pm 0.5}, and when the
+#' grand total is odd the matrix is temporarily mirrored so the unavoidable surplus
+#' meteor originates from the opposite end of the magnitude scale rather than always
+#' favouring the faintest bin. The mirroring is only the initial condition; the loop
+#' then processes the table cell by cell so the rounding direction alternates between
+#' bright and faint magnitudes depending on the current row and column state.
+#' 
 #' @return
 #' A rounded contingency table of meteor magnitudes is returned.
 #' @examples
@@ -101,18 +111,20 @@ vmtable <- function(mt) {
         stop(paste0('Magnitude table is not two-dimensional!'))
     }
 
-    mt.m <- as.matrix(mt)
+    mt.m <- as.matrix(mt) # work with raw numeric matrix to control rounding precisely
     ncol.mt <- ncol(mt.m)
-    # "fair" rounding. Determinate the direction
+    # "Fair" rounding. When the total count is odd we mirror the columns so that the surplus
+    # meteor is taken from the opposite end of the magnitude scale instead of consistently
+    # favouring the faintest magnitudes during the rounding pass
     from.right <- 0L != sum(mt.m) %% 2L
     if (from.right) {
         mt.m <- t(apply(mt.m, 1L, rev))
     }
-    mt2c <- round(2L * mt.m) # "half" meteors
-
+    mt2c <- round(2L * mt.m) # work in half-meteor units so integer rounding keeps the original totals
 
     # phase 1: round column margin and add dummy row
     margin.v <- as.integer(as.vector(margin.table(mt2c, 2L)))
+    # dummy row absorbs the 0.5 remainder per column so every column margin stays intact after rounding
     dummy.row <- diff(c(0L, sapply(cumsum(margin.v), function(freq) {
         2L * (freq %/% 2L) # round down
     }))) - margin.v
@@ -120,46 +132,43 @@ vmtable <- function(mt) {
     nrow.mt2c <- nrow(mt2c)
 
     # phase 2: cumsum column-wise and round
-    mt2c.v <- as.integer(as.vector(mt2c)) # column-wise
-    mt2c.cs <- cumsum(mt2c.v) # due to sum preserving rounding
-    mt2c.cs <- mapply(function(freq, row.id) { # add row index
-        c(freq = freq, row.id = row.id)
-    }, mt2c.cs, rep(seq_len(nrow.mt2c), times=ncol.mt), SIMPLIFY = FALSE)
-    rows.reminder <- rep(0L, nrow.mt2c) # row reminder
-    # apply each frequency column-wise, starting from upper left
-    mt2c.f <- sapply(mt2c.cs, function(cs) {
-        row.id <- cs['row.id']
-        freq <- cs['freq']
-        freq.quotient <- freq %/% 2L
-        freq.reminder <- freq %% 2L
+    mt2c.v <- as.integer(as.vector(mt2c)) # traverse cells column-by-column to match VMDB layout
+    mt2c.v.cs <- cumsum(mt2c.v) # cumulative sum acts as running total for the sum-preserving rounding logic
+    mt2c.row_ids <- rep(seq_len(nrow.mt2c), times=ncol.mt) # retain row membership so remainders alternate per observation
+
+    rows.reminder <- rep(0L, nrow.mt2c) # tracks whether a row already kept the previous 0.5 remainder
+    mt2c.f <- integer(length(mt2c.v.cs))
+    # walk through the cumulative frequencies and distribute every odd remainder to alternating rows
+    for (i in seq_along(mt2c.v.cs)) {
+        row.id <- mt2c.row_ids[i]
+        freq <- mt2c.v.cs[i] # running total for this cell including all previous entries of the column
+        freq.quotient <- freq %/% 2L # largest whole-meteor multiple we can commit without breaking the total
+        freq.reminder <- freq %% 2L # 1 when the cumulative sum would otherwise leave a dangling half meteor
 
         freq <- 2L * freq.quotient
-        if (0L == freq.reminder) {
-            return(freq)
+        if (0L != freq.reminder) {
+            row.reminder.org <- rows.reminder[row.id]
+            row.reminder.new <- 1L
+            if (1L == row.reminder.org) {
+                freq <- freq + 2L # give the extra meteor to the opposite row on alternating encounters
+                row.reminder.new <- 0L
+            }
+
+            if (row.reminder.org != row.reminder.new) {
+                rows.reminder[row.id] <- row.reminder.new # remember which rows have already claimed the half meteor
+            }
         }
-
-        row.reminder.org <- rows.reminder[row.id]
-        row.reminder.new <- 1L
-        if (1L == row.reminder.org) {
-            freq <- freq + 2L
-            row.reminder.new <- 0L
-        }
-
-        if (row.reminder.org != row.reminder.new) {
-            rows.reminder[row.id] <<- row.reminder.new
-        }
-
-        return(freq)
-    })
-
-    mt2c.v <- diff(append(mt2c.f, 0L, after = 0L)) # inverse of cumsum
-    mt2c.m <- matrix(mt2c.v, ncol = ncol.mt)
-    mt2c.m <- utils::head(mt2c.m, -1L) # remove dummy.row
-    if (from.right) {
-        mt2c.m <- t(apply(mt2c.m, 1L, rev))
+        mt2c.f[i] <- freq # store the adjusted cumulative total for later differencing
     }
 
-    result <- as.table(mt2c.m %/% 2L)
+    mt2c.v <- diff(append(mt2c.f, 0L, after = 0L)) # undo cumulative form to recover per-cell counts
+    mt2c.m <- matrix(mt2c.v, ncol = ncol.mt) # restore table shape after column-wise walk
+    mt2c.m <- utils::head(mt2c.m, -1L) # remove dummy.row
+    if (from.right) {
+        mt2c.m <- t(apply(mt2c.m, 1L, rev)) # reapply original magnitude ordering if we flipped earlier
+    }
+
+    result <- as.table(mt2c.m %/% 2L) # collapse half-meteor counts back to whole meteors
     dimnames(result) <- dimnames(mt) # restore dimnames
 
     return(result)

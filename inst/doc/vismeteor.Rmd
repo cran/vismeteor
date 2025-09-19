@@ -63,8 +63,7 @@ are commonly expressed in relation to the difference between the meteor's magnit
 limiting magnitude of the observation.
 
 This package includes the function `vmperception()` to return perception probabilities for
-visual meteor magnitudes. For advanced analytical purposes, `vmperception.l()` is provided
-to return the Laplace-transformed perception probabilities.
+visual meteor magnitudes.
 
 Custom perception probability functions can be passed to most functions of this package.
 This allows users to tailor the behavior of the functions to their specific needs and
@@ -72,7 +71,18 @@ conduct their own studies on the appearance of observable meteor magnitudes.
 This flexibility is particularly valuable for researchers wishing to incorporate
 their own empirical data or models into the analysis.
 
-See `?vmperception` and `?vmperception.l` for more information.
+```{r, echo=TRUE}
+plot(
+  vmperception,
+  -0.5, 8,
+  main = "Perception probability of visual meteor magnitudes",
+  col = "blue",
+  xlab = "limiting magnitude - meteor magnitude",
+  ylab = "p"
+)
+```
+
+See `?vmperception` for more information.
 
 ## Geometric Model of Visual Meteor Magnitudes
 
@@ -111,7 +121,7 @@ axis(side = 2, at = pretty(p))
 
 See `?vmgeom` for more information.
 
-## Ideal Distribution of Meteor Magnitudes
+## Ideal Distribution of Visual Meteor Magnitudes
 
 The ideal model of visual meteor magnitudes is an alternative to the geometric model.
 It more accurately accounts for the finiteness of meteor magnitudes across the entire
@@ -219,9 +229,9 @@ print(tapply(freq, f, sum))
 
 See `?freq.quantile` for more information.
 
-## Interfacing VMDB Data with `load_vmdb()`
+## Interfacing VMDB Data with VMDB Loaders
 
-The `load_vmdb()` function is designed to interface with the
+The functions `load_vmdb_rates()` and `load_vmdb_magnitudes()` are designed to interface with the
 [imo-vmdb](https://pypi.org/project/imo-vmdb/)
 application, processing data specifically exported from the Visual Meteor Database (VMDB) in
 CSV format. After these CSV exports are verified and validated with the _imo-vmdb_ application,
@@ -229,7 +239,7 @@ they are stored in a relational database, which enhances the accessibility and u
 data compared to its original CSV format. This storage method establishes relationships between
 data records and enriches them with additional information derived from the original data records.
 
-Utilizing `load_vmdb()`, users can efficiently query and retrieve specific datasets relevant
+Utilizing these helpers, users can efficiently query and retrieve specific datasets relevant
 to their meteor observation analysis. This streamlined access facilitates more comprehensive
 and targeted research.
 

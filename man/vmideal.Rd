@@ -50,6 +50,7 @@ with the perception probabilities.
 
 The length of the result is determined by \code{n} for \code{rvmideal}, and is the maximum
 of the lengths of the numeric vector arguments for the other functions.
+All arguments are vectorized; standard R recycling rules apply.
 
 Since the distribution is discrete, \code{qvmideal} and \code{rvmideal} always return integer values.
 \code{qvmideal} may return \code{NaN} with a warning.
@@ -77,11 +78,10 @@ Thus, the distribution is the product of the
 underlying \link[=mideal]{ideal distribution} of meteor magnitudes.
 
 If a perception probability function \code{perception.fun} is supplied,
-it must have the signature \verb{function(M)} and return the perception probabilities of
-the difference \code{M} between the limiting magnitude and the meteor magnitude.
-If \code{m >= 15.0}, the \code{perception.fun} function should return a perception probability of \code{1.0}.
-If \code{log = TRUE} is given, the logarithm of the perception probabilities
-must be returned. The argument \code{perception.fun} is resolved using \link{match.fun}.
+it must have the signature \verb{function(x)} and return the perception probabilities of
+the difference \code{x} between the limiting magnitude and the meteor magnitude.
+If \code{x >= 15.0}, the \code{perception.fun} function should return a perception probability of \code{1.0}.
+The argument \code{perception.fun} is resolved using \link{match.fun}.
 }
 \examples{
 N <- 100

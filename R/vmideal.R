@@ -38,11 +38,10 @@
 #' underlying [ideal distribution][vismeteor::mideal] of meteor magnitudes.
 #'
 #' If a perception probability function `perception.fun` is supplied,
-#' it must have the signature `function(M)` and return the perception probabilities of
-#' the difference `M` between the limiting magnitude and the meteor magnitude.
-#' If `m >= 15.0`, the `perception.fun` function should return a perception probability of `1.0`.
-#' If `log = TRUE` is given, the logarithm of the perception probabilities
-#' must be returned. The argument `perception.fun` is resolved using [match.fun].
+#' it must have the signature `function(x)` and return the perception probabilities of
+#' the difference `x` between the limiting magnitude and the meteor magnitude.
+#' If `x >= 15.0`, the `perception.fun` function should return a perception probability of `1.0`.
+#' The argument `perception.fun` is resolved using [match.fun].
 #'
 #' @return
 #' - `dvmideal`: density  
@@ -54,6 +53,7 @@
 #'
 #' The length of the result is determined by `n` for `rvmideal`, and is the maximum
 #' of the lengths of the numeric vector arguments for the other functions.
+#' All arguments are vectorized; standard R recycling rules apply.
 #'
 #' Since the distribution is discrete, `qvmideal` and `rvmideal` always return integer values.
 #' `qvmideal` may return `NaN` with a warning.

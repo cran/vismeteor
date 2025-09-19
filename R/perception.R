@@ -1,7 +1,7 @@
 #' @title Perception Probabilities of Visual Meteor Magnitudes
 #' @description
 #' Provides the perception probability of visual meteor magnitudes.
-#' @param m numerical; difference between the limiting magnitude and the meteor magnitude.
+#' @param m numeric; difference between the limiting magnitude and the meteor magnitude.
 #' @details
 #' The perception probabilities of _Koschack R., Rendtel J., 1990b_
 #' are estimated with the formula

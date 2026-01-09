@@ -23,23 +23,28 @@ knitr::opts_chunk$set(
 ## Introduction
 
 The density of the ideal distribution of meteor magnitudes is
-
 $$
     {\displaystyle f(m) = \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 $$
-where $m$ is the meteor magnitude, $r = 10^{0.4} \approx 2.51189 \dots$ is a constant and
+where $m$ denotes the continuous (real-valued) meteor magnitude,
+$r = 10^{0.4} \approx 2.51189 \dots$ is a constant, and
 $\psi$ is the only parameter of this magnitude distribution.
 
-In visual meteor observation, it is common to estimate meteor magnitudes in integer values.
-Hence, this distribution is discrete and has the density
-
+In visual meteor observations, magnitudes are usually estimated as integer values.
+Hence, this distribution is discrete and its probability mass function is given by
 $$
-   {\displaystyle P[M = m] \sim g(m) \, \int_{m-0.5}^{m+0.5} f(m) \, \, \mathrm{d}m} \, \mathrm{,}
+P[M = m] \sim
+\begin{cases}
+  g(m_{\mathrm{lim}} - m) \displaystyle \int\limits_{m-0.5}^{m+0.5} f(u) \, \mathrm{d}u, & \text{if } m_{\mathrm{lim}} - m > -0.5,\\[5pt]
+  0 & \text{otherwise,}
+\end{cases}
 $$
-where $g(m)$ is the perception probability function. This distribution is thus a product of the
-perception probabilities and the actual ideal distribution of meteor magnitudes.
+where $m_{\mathrm{lim}}$ denotes the limiting (non-integer) magnitude of the observation,
+and $m$ the integer meteor magnitude.
+The function $f(\cdot)$ is the continuous density of the ideal magnitude distribution,
+and $g(\cdot)$ denotes the perception probability function.
 
-Here we demonstrate a method for an unbiased estimation of $\psi$.
+Here we demonstrate two methods to estimate the parameter $\psi$.
 
 First, we obtain some magnitude observations from the example data set,
 which also includes the limiting magnitude.
@@ -93,7 +98,7 @@ This is a sufficiently large number to estimate the parameter.
 
 ## Maximum Likelihood Method
 
-The maximum likelihood method can be used to estimate the parameter in an unbiased manner.
+The maximum likelihood method can be used to estimate the parameter in an asymptotically unbiased manner.
 For this, the function `dvmideal()` is needed, which returns the probability density of
 the observable meteor magnitudes when the parameter and the limiting magnitudes are known.
 
@@ -148,7 +153,7 @@ with(new.env(), {
 
 It is clearly visible that the likelihood function is not normally distributed.
 This distribution even belongs to the class of heavy-tailed distributions.
-While its maximum is indeed an unbiased estimator, this does not hold for the variance.
+While its maximum is indeed an asymptotically unbiased estimator, this does not hold for the variance.
 This is important in this context because the variance of the estimated $\psi$-value is derived from the curvature (the second derivative at the maximum) of the log-likelihood function.
 Therefore, the estimator for the variance of $\psi$ is far too small.
 
@@ -170,6 +175,11 @@ The variance-stabilizing transformation has the following additional advantages:
 
 The resulting procedure is straightforward: it suffices to compute the mean of
 the transformed meteor magnitudes, from which an estimate of the parameter $\psi$ is obtained.
+
+Note that the variance-stabilizing transformation yields a mean that can be directly analyzed,
+but converting it back to the $\psi$ parameter requires applying the delta method.
+This accounts for the nonlinearity of the transformation and provides appropriate uncertainty
+estimates for $\psi$.
 
 ```{r, echo=TRUE, results='show'}
 tm.mean <- with(magnitudes, {
@@ -233,7 +243,7 @@ There are two possible explanations:
 2. Random variation led to this result.
 
 Although the expected value is clearly above `0.0` and can therefore be used, it is more appropriate
-in this context to interpret the value as the median:
+in this context to interpret the value as the median.
 
 ```{r, echo=TRUE}
 lim.magn.mean <- with(magnitudes, {
@@ -331,7 +341,9 @@ We now need the corresponding expected relative frequencies
 
 ```{r, echo=TRUE}
 magnitutes.expected <- xtabs(p ~ magn.id + magn, data = magnitudes)
-magnitutes.expected <- magnitutes.expected/nrow(magnitutes.expected)
+magnitutes.row_freq <- margin.table(magnitutes.observed, margin = 1)
+magnitutes.expected <- sweep(magnitutes.expected, 1, magnitutes.row_freq, `*`)
+magnitutes.expected <- magnitutes.expected/sum(magnitutes.expected)
 print(sum(magnitudes$Freq) * margin.table(magnitutes.expected, margin = 2))
 ```
 
@@ -347,11 +359,13 @@ chisq.test.result <- chisq.test(
 As a result, we obtain the p-value:
 
 ```{r, echo=TRUE}
-print(chisq.test.result$p.value)
+chi2.df <- chisq.test.result$parameter - 1
+chi2.pval <- pchisq(chisq.test.result$statistic, df = chi2.df, lower.tail = FALSE)
+print(chi2.pval)
 ```
 
 If we set the level of significance at 5 percent, then it is clear that the p-value with
-`r chisq.test.result$p.value` is greater than 0.05. Thus, under the assumption that the
+`r unname(chi2.pval)` is greater than 0.05. Thus, under the assumption that the
 magnitude distribution follows the ideal meteor magnitude distribution and that
 the perception probabilities are correct (i.e., error-free or precisely known),
 these assumptions cannot be rejected. However, the converse is not true; the assumptions
@@ -364,7 +378,7 @@ To verify the p-value, we also graphically represent the Pearson residuals:
 chisq.test.residuals <- with(new.env(), {
     chisq.test.residuals <- residuals(chisq.test.result)
     v <- as.vector(chisq.test.residuals)
-    names(v) <- rownames(chisq.test.residuals)
+    names(v) <- names(chisq.test.residuals)
     v
 })
 

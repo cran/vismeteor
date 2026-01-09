@@ -151,7 +151,9 @@ print(margin.table(magnitutes.observed, margin = 2))
 
 ## ----echo=TRUE----------------------------------------------------------------
 magnitutes.expected <- xtabs(p ~ magn.id + magn, data = magnitudes)
-magnitutes.expected <- magnitutes.expected/nrow(magnitutes.expected)
+magnitutes.row_freq <- margin.table(magnitutes.observed, margin = 1)
+magnitutes.expected <- sweep(magnitutes.expected, 1, magnitutes.row_freq, `*`)
+magnitutes.expected <- magnitutes.expected/sum(magnitutes.expected)
 print(sum(magnitudes$Freq) * margin.table(magnitutes.expected, margin = 2))
 
 ## ----echo=TRUE, results='asis'------------------------------------------------
@@ -161,13 +163,15 @@ chisq.test.result <- chisq.test(
 )
 
 ## ----echo=TRUE----------------------------------------------------------------
-print(chisq.test.result$p.value)
+chi2.df <- chisq.test.result$parameter - 1
+chi2.pval <- pchisq(chisq.test.result$statistic, df = chi2.df, lower.tail = FALSE)
+print(chi2.pval)
 
 ## ----fig.show='hold'----------------------------------------------------------
 chisq.test.residuals <- with(new.env(), {
     chisq.test.residuals <- residuals(chisq.test.result)
     v <- as.vector(chisq.test.residuals)
-    names(v) <- rownames(chisq.test.residuals)
+    names(v) <- names(chisq.test.residuals)
     v
 })
 

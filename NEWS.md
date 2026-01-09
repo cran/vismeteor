@@ -1,3 +1,10 @@
+# vismeteor 2.0.2
+
+## Changes
+
+- Clarified documentation and vignettes for `vmgeom` and `vmideal` models, including improved mathematical notation and explanations.
+- Hidden internal parameters from exported function documentation to reduce user confusion.
+
 # vismeteor 2.0.1
 
 ## Changes
@@ -10,10 +17,6 @@
 - Added `load_vmdb()` regression tests.
 
 # vismeteor 2.0.0
-
-## Highlights
-This release introduces variance-stabilizing transformations for ideally distributed visual meteor magnitudes 
-(`vmidealVstFromMagn()`) as well as for visual meteor magnitudes under a geometric distribution (`vmgeomVstFromMagn()`).
 
 ## Highlights
 This release introduces variance-stabilizing transformations for the ideal distribution of visual meteor magnitudes (`vmidealVstFromMagn()`) as well as for visual meteor magnitudes under a geometric distribution (`vmgeomVstFromMagn()`).

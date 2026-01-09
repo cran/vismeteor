@@ -49,7 +49,8 @@ The density of the ideal distribution of meteor magnitudes is
 \deqn{
     {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 }
-where \eqn{m} is the meteor magnitude, \eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant and
+where \eqn{m} is the continuous (real-valued) meteor magnitude,
+\eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant and
 \eqn{\psi} is the only parameter of this magnitude distribution.
 }
 \examples{

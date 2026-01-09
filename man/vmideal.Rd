@@ -64,20 +64,25 @@ The density of the \link[=mideal]{ideal distribution of meteor magnitudes} is
 \deqn{
     {\displaystyle f(m) = \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 }
-where \eqn{m} is the meteor magnitude, \eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant, and
+where \eqn{m} denotes the continuous (real-valued) meteor magnitude,
+\eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant, and
 \eqn{\psi} is the only parameter of this magnitude distribution.
 
 In visual meteor observations, magnitudes are usually estimated as integer values.
 Hence, this distribution is discrete and its probability mass function is given by
 \deqn{
-    P[M = m] \sim g(m) \, \int_{m-0.5}^{m+0.5} f(m) \, \mathrm{d}m \, ,
+P[M = m] \sim
+\begin{cases}
+  g(m_{\mathrm{lim}} - m) \displaystyle \int\limits_{m-0.5}^{m+0.5} f(u) \, \mathrm{d}u, & \text{if } m_{\mathrm{lim}} - m > -0.5,\\[5pt]
+  0 & \text{otherwise,}
+\end{cases}
 }
-where \eqn{g(m)} denotes the perception probability.
-Thus, the distribution is the product of the
-\link[=vmperception]{perception probabilities} and the
-underlying \link[=mideal]{ideal distribution} of meteor magnitudes.
+where \eqn{m_{\mathrm{lim}}} denotes the limiting (non-integer) magnitude of the observation,
+and \eqn{m} the integer meteor magnitude.
+The function \eqn{f(\cdot)} is the continuous density of the ideal magnitude distribution,
+and \eqn{g(\cdot)} denotes the \link[=vmperception]{perception probability function}.
 
-If a perception probability function \code{perception.fun} is supplied,
+If a different perception probability function \code{perception.fun} is supplied,
 it must have the signature \verb{function(x)} and return the perception probabilities of
 the difference \code{x} between the limiting magnitude and the meteor magnitude.
 If \code{x >= 15.0}, the \code{perception.fun} function should return a perception probability of \code{1.0}.

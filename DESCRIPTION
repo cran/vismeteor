@@ -1,7 +1,7 @@
 Package: vismeteor
 Type: Package
 Title: Analysis of Visual Meteor Data
-Version: 2.0.1
+Version: 2.0.2
 Authors@R: c(person("Janko", "Richter", role = c("aut", "cre"), email = "janko@richtej.de"))
 Author: Janko Richter [aut, cre]
 Maintainer: Janko Richter <janko@richtej.de>
@@ -21,6 +21,6 @@ Suggests: usethis (>= 2.1.1), testthat (>= 3.0.0), RSQLite (>= 2.2.1),
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2025-09-19 13:28:29 UTC; j.richter
+Packaged: 2026-01-04 10:45:30 UTC; j.richter
 Repository: CRAN
-Date/Publication: 2025-09-19 13:40:02 UTC
+Date/Publication: 2026-01-09 09:40:02 UTC

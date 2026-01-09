@@ -7,7 +7,7 @@
 #' @description
 #' Density, distribution function, quantile function, and random generation
 #' for the geometric model of visual meteor magnitudes.
-#' @param m numeric; the meteor magnitude.
+#' @param m integer; the meteor magnitude.
 #' @param p numeric; probability.
 #' @param lm numeric; limiting magnitude.
 #' @param r numeric; the population index.
@@ -18,26 +18,34 @@
 #' @param perception.fun function; perception probability function (optional).
 #'     Default is [vismeteor::vmperception].
 #' @details
-#' In visual meteor observations, magnitudes are usually estimated as integer values.
-#' Hence, this distribution is discrete and its probability mass function is
+#' In visual meteor observations, magnitudes are estimated as integer values.
+#' Consequently, the distribution of observed magnitudes is discrete, and its
+#' probability mass function is given by
+#'
 #' \deqn{
-#'     {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
+#' P[M = m] \sim
+#' \begin{cases}
+#'   f(m_{\mathrm{lim}} - m)\, r^m, & \text{if } m_{\mathrm{lim}} - m > -0.5,\\[5pt]
+#'   0 & \text{otherwise,}
+#' \end{cases}
 #' }
-#' where \eqn{x \ge -0.5} denotes the difference between the limiting magnitude `lm`
-#' and the meteor magnitude `m`, and \eqn{f(x)} is the perception probability function.
-#' Thus, the distribution is the product of the
-#' [perception probabilities][vismeteor::vmperception] and the
+#'
+#' where \eqn{m_{\mathrm{lim}}} denotes the limiting (non-integer) magnitude of the observation,
+#' and \eqn{m} the integer meteor magnitude.
+#' The function \eqn{f(\cdot)} denotes the [perception probability function][vismeteor::vmperception].
+#'
+#' Thus, the distribution is the product of the perception probabilities and the
 #' underlying [geometric distribution][stats::Geometric] of meteor magnitudes.
 #' Therefore, the parameter `p` of the geometric distribution is given by `p = 1 - 1/r`.
 #'
-#' The parameter `lm` specifies the reference for the meteor magnitude `m`.
-#' `m` must be an integer meteor magnitude.  
+#' The parameter `lm` specifies the limiting magnitude for the meteor magnitude `m`.
+#' `m` must be an integer meteor magnitude.
 #' The length of the vector `lm` must either equal the length of the vector `m`,
-#' or `lm` must be a scalar value.  
+#' or `lm` must be a scalar value.
 #' In the case of `rvmgeom`, the length of the vector `lm` must equal `n`,
 #' or `lm` must be a scalar value.
 #'
-#' If a perception probability function `perception.fun` is provided,
+#' If a different perception probability function `perception.fun` is provided,
 #' it must have the signature `function(x)` and return the perception probability of
 #' the difference `x` between the limiting magnitude and the meteor magnitude.
 #' If `x >= 15.0`, the function `perception.fun` should return a perception probability of `1.0`.
@@ -53,7 +61,7 @@
 #' of the lengths of the numeric vector arguments for the other functions.
 #' All arguments are vectorized; standard R recycling rules apply.
 #'
-#' Since the distribution is discrete, `qvmgeom` and `rvmgeom` always return integer values.  
+#' Since the distribution is discrete, `qvmgeom` and `rvmgeom` always return integer values.
 #' `qvmgeom` may return `NaN` with a warning.
 #' @seealso [vismeteor::vmperception]
 #'   [stats::Geometric]

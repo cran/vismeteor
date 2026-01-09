@@ -17,7 +17,7 @@ qvmgeom(p, lm, r, lower.tail = TRUE, perception.fun = NULL)
 rvmgeom(n, lm, r, perception.fun = NULL)
 }
 \arguments{
-\item{m}{numeric; the meteor magnitude.}
+\item{m}{integer; the meteor magnitude.}
 
 \item{lm}{numeric; limiting magnitude.}
 
@@ -55,26 +55,34 @@ Density, distribution function, quantile function, and random generation
 for the geometric model of visual meteor magnitudes.
 }
 \details{
-In visual meteor observations, magnitudes are usually estimated as integer values.
-Hence, this distribution is discrete and its probability mass function is
+In visual meteor observations, magnitudes are estimated as integer values.
+Consequently, the distribution of observed magnitudes is discrete, and its
+probability mass function is given by
+
 \deqn{
-    {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
+P[M = m] \sim
+\begin{cases}
+  f(m_{\mathrm{lim}} - m)\, r^m, & \text{if } m_{\mathrm{lim}} - m > -0.5,\\[5pt]
+  0 & \text{otherwise,}
+\end{cases}
 }
-where \eqn{x \ge -0.5} denotes the difference between the limiting magnitude \code{lm}
-and the meteor magnitude \code{m}, and \eqn{f(x)} is the perception probability function.
-Thus, the distribution is the product of the
-\link[=vmperception]{perception probabilities} and the
+
+where \eqn{m_{\mathrm{lim}}} denotes the limiting (non-integer) magnitude of the observation,
+and \eqn{m} the integer meteor magnitude.
+The function \eqn{f(\cdot)} denotes the \link[=vmperception]{perception probability function}.
+
+Thus, the distribution is the product of the perception probabilities and the
 underlying \link[stats:Geometric]{geometric distribution} of meteor magnitudes.
 Therefore, the parameter \code{p} of the geometric distribution is given by \code{p = 1 - 1/r}.
 
-The parameter \code{lm} specifies the reference for the meteor magnitude \code{m}.
+The parameter \code{lm} specifies the limiting magnitude for the meteor magnitude \code{m}.
 \code{m} must be an integer meteor magnitude.
 The length of the vector \code{lm} must either equal the length of the vector \code{m},
 or \code{lm} must be a scalar value.
 In the case of \code{rvmgeom}, the length of the vector \code{lm} must equal \code{n},
 or \code{lm} must be a scalar value.
 
-If a perception probability function \code{perception.fun} is provided,
+If a different perception probability function \code{perception.fun} is provided,
 it must have the signature \verb{function(x)} and return the perception probability of
 the difference \code{x} between the limiting magnitude and the meteor magnitude.
 If \code{x >= 15.0}, the function \code{perception.fun} should return a perception probability of \code{1.0}.

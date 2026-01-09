@@ -419,20 +419,24 @@ empirical data or models into the analysis.</p>
 integer values.<br />
 Hence, the geometric model is discrete and its probability mass function
 is <span class="math display">\[
-    {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
-\]</span> where <span class="math inline">\(x \ge -0.5\)</span> denotes
-the difference between the limiting magnitude and the meteor magnitude,
-and <span class="math inline">\(f(x)\)</span> is the perception
-probability function.<br />
-This distribution is the product of the perception probabilities and the
-underlying geometric distribution of meteor magnitudes.<br />
-Therefore, the parameter <span class="math inline">\(p\)</span> of the
-geometric distribution is <span class="math inline">\(p = 1 -
-1/r\)</span>.</p>
-<p>The main advantage of this model is its simplicity.<br />
-When the number of observed meteors is small, it can often be shown that
-the distribution of meteor magnitudes is well described by this
-model.</p>
+P[M = m] \sim
+\begin{cases}
+  f(m_{\mathrm{lim}} - m)\, r^m, &amp; \text{if } m_{\mathrm{lim}} - m
+&gt; -0.5,\\[5pt]
+  0 &amp; \text{otherwise,}
+\end{cases}
+\]</span></p>
+<p>where <span class="math inline">\(m_{\mathrm{lim}}\)</span> denotes
+the limiting (non-integer) magnitude of the observation, and <span class="math inline">\(m\)</span> the integer meteor magnitude. The
+function <span class="math inline">\(f(\cdot)\)</span> denotes the
+perception probability function.</p>
+<p>This distribution is the product of the perception probabilities and
+the underlying geometric distribution of meteor magnitudes. Therefore,
+the parameter <span class="math inline">\(p\)</span> of the geometric
+distribution is <span class="math inline">\(p = 1 - 1/r\)</span>.</p>
+<p>The main advantage of this model is its simplicity. When the number
+of observed meteors is small, it can often be shown that the
+distribution of meteor magnitudes is well described by this model.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">6</span>, <span class="sc">-</span><span class="dv">4</span>, <span class="sc">-</span><span class="dv">1</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>limmag <span class="ot">&lt;-</span> <span class="fl">6.5</span></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>r <span class="ot">&lt;-</span> <span class="fl">2.0</span></span>
@@ -463,9 +467,9 @@ model, fewer faint meteor magnitudes are observed.</p>
 <p><span class="math display">\[
 {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r)
 \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
-\]</span> where <span class="math inline">\(m\)</span> is the meteor
-magnitude, <span class="math inline">\(r = 10^{0.4} \approx 2.51189
-\dots\)</span> is a constant and <span class="math inline">\(\psi\)</span> is the only parameter of this
+\]</span> where <span class="math inline">\(m\)</span> is the continuous
+(real-valued) meteor magnitude, <span class="math inline">\(r = 10^{0.4}
+\approx 2.51189 \dots\)</span> is a constant and <span class="math inline">\(\psi\)</span> is the only parameter of this
 magnitude distribution.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">6</span>, <span class="sc">-</span><span class="dv">4</span>, <span class="sc">-</span><span class="dv">1</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>psi <span class="ot">&lt;-</span> <span class="fl">5.0</span></span>

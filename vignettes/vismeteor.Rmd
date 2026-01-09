@@ -89,15 +89,22 @@ See `?vmperception` for more information.
 In visual meteor observations, magnitudes are typically recorded as integer values.  
 Hence, the geometric model is discrete and its probability mass function is
 $$
-    {\displaystyle P[X = x] \sim f(x) \, \mathrm r^{-x}} \,\mathrm{,}
+P[M = m] \sim
+\begin{cases}
+  f(m_{\mathrm{lim}} - m)\, r^m, & \text{if } m_{\mathrm{lim}} - m > -0.5,\\[5pt]
+  0 & \text{otherwise,}
+\end{cases}
 $$
-where $x \ge -0.5$ denotes the difference between the limiting magnitude and the
-meteor magnitude, and $f(x)$ is the perception probability function.  
+
+where $m_{\mathrm{lim}}$ denotes the limiting (non-integer) magnitude of the observation,
+and $m$ the integer meteor magnitude.
+The function $f(\cdot)$ denotes the perception probability function.
+
 This distribution is the product of the perception probabilities and the
-underlying geometric distribution of meteor magnitudes.  
+underlying geometric distribution of meteor magnitudes.
 Therefore, the parameter $p$ of the geometric distribution is $p = 1 - 1/r$.
 
-The main advantage of this model is its simplicity.  
+The main advantage of this model is its simplicity.
 When the number of observed meteors is small, it can often be shown that the
 distribution of meteor magnitudes is well described by this model.
 
@@ -135,7 +142,8 @@ The density of the ideal distribution is
 $$
 {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 $$
-where $m$ is the meteor magnitude, $r = 10^{0.4} \approx 2.51189 \dots$ is a constant and
+where $m$ is the continuous (real-valued) meteor magnitude,
+$r = 10^{0.4} \approx 2.51189 \dots$ is a constant and
 $\psi$ is the only parameter of this magnitude distribution.
 
 ```{r, echo=TRUE, results='hide'}

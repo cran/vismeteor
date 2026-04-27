@@ -57,7 +57,7 @@ where \eqn{m} is the continuous (real-valued) meteor magnitude,
 old_par <- par(mfrow = c(2,2))
 psi <- 5.0
 plot(
-    function(m) dmideal(m, psi, log = FALSE),
+    \(m) dmideal(m, psi, log = FALSE),
     -5, 10,
     main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",
@@ -67,7 +67,7 @@ plot(
 abline(v=psi, col="red")
 
 plot(
-    function(m) dmideal(m, psi, log = TRUE),
+    \(m) dmideal(m, psi, log = TRUE),
     -5, 10,
     main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",
@@ -77,7 +77,7 @@ plot(
 abline(v=psi, col="red")
 
 plot(
-    function(m) pmideal(m, psi),
+    \(m) pmideal(m, psi),
     -5, 10,
     main = paste0('Probability of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",
@@ -87,7 +87,7 @@ plot(
 abline(v=psi, col="red")
 
 plot(
-    function(p) qmideal(p, psi),
+    \(p) qmideal(p, psi),
     0.01, 0.99,
     main = paste('Quantile of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
     col = "blue",

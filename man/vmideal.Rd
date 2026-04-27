@@ -138,7 +138,7 @@ barplot(
 axis(side = 2, at = pretty(p))
 
 plot(
-    function(lm) vismeteor::cvmideal(lm, psi, log = TRUE),
+    \(lm) vismeteor::cvmideal(lm, psi, log = TRUE),
     -5, 10,
     main = paste0(
         'Partial convolution of the ideal meteor magnitude distribution\n',

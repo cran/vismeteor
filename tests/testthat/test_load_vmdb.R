@@ -1,246 +1,169 @@
-test_that("load_vmdb", {
-  testthat::skip_if_not_installed("RSQLite")
-  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
-  on.exit(DBI::dbDisconnect(con), add = TRUE)
+test_that(".build_params: shower encoding", {
+  p <- vismeteor:::.build_params("PER", NULL, NULL, NULL)
+  expect_equal(p$multi$shower, "PER")
 
-  # Minimal schema compatible with queries used in load_vmdb_*
-  DBI::dbExecute(con, '
-    CREATE TABLE obs_session (
-        id integer PRIMARY KEY,
-        longitude real NOT NULL,
-        latitude real NOT NULL,
-        elevation real NOT NULL,
-        observer_id integer NULL,
-        observer_name TEXT NULL,
-        country TEXT NOT NULL,
-        city TEXT NOT NULL
-  )')
-  DBI::dbExecute(con, '
-    CREATE TABLE rate (
-      id integer NOT NULL,
-      shower varchar(6) NULL,
-      period_start timestamp NOT NULL,
-      period_end timestamp NOT NULL,
-      sl_start double precision NOT NULL,
-      sl_end double precision NOT NULL,
-      session_id integer NOT NULL,
-      freq integer NOT NULL,
-      lim_mag real NOT NULL,
-      t_eff real NOT NULL,
-      f real NOT NULL,
-      sidereal_time double precision NOT NULL,
-      sun_alt double precision NOT NULL,
-      sun_az double precision NOT NULL,
-      moon_alt double precision NOT NULL,
-      moon_az double precision NOT NULL,
-      moon_illum double precision NOT NULL,
-      field_alt double precision NULL,
-      field_az double precision NULL,
-      rad_alt double precision NULL,
-      rad_az double precision NULL,
-      CONSTRAINT rate_pkey PRIMARY KEY (id),
-      CONSTRAINT rate_session_fk FOREIGN KEY (session_id)
-          REFERENCES obs_session(id) MATCH SIMPLE
-          ON UPDATE CASCADE
-          ON DELETE CASCADE
-  )')
-  DBI::dbExecute(con, '
-    CREATE TABLE magnitude (
-      id integer NOT NULL,
-      shower varchar(6) NULL,
-      period_start timestamp NOT NULL,
-      period_end timestamp NOT NULL,
-      sl_start double precision NOT NULL,
-      sl_end double precision NOT NULL,
-      session_id integer NOT NULL,
-      freq integer NOT NULL,
-      mean double precision NOT NULL,
-      lim_mag real NULL,
-      CONSTRAINT magnitude_pkey PRIMARY KEY (id),
-      CONSTRAINT magnitude_session_fk FOREIGN KEY (session_id)
-          REFERENCES obs_session(id) MATCH SIMPLE
-          ON UPDATE CASCADE
-          ON DELETE CASCADE
-  )')
-  DBI::dbExecute(con, '
-    CREATE TABLE magnitude_detail (
-    id integer NOT NULL,
-    magn integer NOT NULL,
-    freq real NOT NULL,
-    CONSTRAINT magnitude_detail_pkey PRIMARY KEY (id, magn),
-    CONSTRAINT magnitude_detail_fk FOREIGN KEY (id)
-        REFERENCES magnitude(id) MATCH SIMPLE
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-  )')
-  DBI::dbExecute(con, '
-    CREATE TABLE rate_magnitude (
-      rate_id integer NOT NULL,
-      magn_id integer NOT NULL,
-      "equals" boolean NOT NULL,
-      CONSTRAINT rate_magnitude_pkey PRIMARY KEY (rate_id),
-      CONSTRAINT rate_magnitude_rate_fk FOREIGN KEY (rate_id)
-          REFERENCES rate (id) MATCH SIMPLE
-          ON UPDATE CASCADE
-          ON DELETE CASCADE,
-      CONSTRAINT rate_magnitude_magn_fk FOREIGN KEY (magn_id)
-          REFERENCES magnitude(id) MATCH SIMPLE
-          ON UPDATE CASCADE
-          ON DELETE CASCADE
-  )')
+  # NA → SPO (sporadic)
+  p <- vismeteor:::.build_params(NA, NULL, NULL, NULL)
+  expect_equal(p$multi$shower, "SPO")
 
-  # Seed data: multiple sessions and observations to exercise filters
-  DBI::dbExecute(con, "INSERT INTO obs_session (id, longitude, latitude, elevation, country, city, observer_id, observer_name)
-    VALUES (1, 10.0, 50.0, 0.3, 'DE', 'Somewhere', 'XX', 'Doe, J.')")
-  DBI::dbExecute(con, "INSERT INTO obs_session (id, longitude, latitude, elevation, country, city, observer_id, observer_name)
-    VALUES (2, 11.0, 51.0, 0.5, 'DE', 'Elsewhere', 'YY', 'Roe, A.')")
-  DBI::dbExecute(con, "INSERT INTO obs_session (id, longitude, latitude, elevation, country, city, observer_id, observer_name)
-    VALUES (3, 12.0, 52.0, 0.1, 'FR', 'Paris', 'ZZ', 'Mete, O.')")
-  DBI::dbExecute(con, "INSERT INTO rate (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, lim_mag,
-      t_eff, f, sidereal_time, sun_alt, sun_az, moon_alt, moon_az, moon_illum, field_alt, field_az, rad_alt, rad_az)
-    VALUES (100, 'PER', '2015-08-12 00:00:00', '2015-08-12 01:00:00', 140.0, 140.5, 1, 12, 6.5,
-      0.9, 1.0, 10.0, -18.0, 120.0, -30.0, 200.0, 0.5, 50.0, 180.0, 45.0, 90.0)")
-  DBI::dbExecute(con, "INSERT INTO rate (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, lim_mag,
-      t_eff, f, sidereal_time, sun_alt, sun_az, moon_alt, moon_az, moon_illum, field_alt, field_az, rad_alt, rad_az)
-    VALUES (101, 'PER', '2015-08-12 01:00:00', '2015-08-12 02:00:00', 140.6, 141.0, 2, 14, 5.8,
-      0.8, 0.9, 11.0, -12.0, 122.0, -15.0, 201.0, 0.4, 48.0, 182.0, 44.5, 91.0)")
-  DBI::dbExecute(con, "INSERT INTO rate (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, lim_mag,
-      t_eff, f, sidereal_time, sun_alt, sun_az, moon_alt, moon_az, moon_illum, field_alt, field_az, rad_alt, rad_az)
-    VALUES (102, 'GEM', '2015-12-14 00:00:00', '2015-12-14 01:00:00', 250.0, 250.4, 2, 20, 6.8,
-      0.85, 1.1, 30.0, -6.0, 60.0, 12.0, 210.0, 0.8, 60.0, 175.0, 55.0, 88.0)")
-  DBI::dbExecute(con, "INSERT INTO rate (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, lim_mag,
-      t_eff, f, sidereal_time, sun_alt, sun_az, moon_alt, moon_az, moon_illum, field_alt, field_az, rad_alt, rad_az)
-    VALUES (103, NULL, '2015-12-14 01:00:00', '2015-12-14 02:00:00', 350.0, 5.0, 3, 6, 6.1,
-      0.7, 0.95, 31.0, -2.0, 61.0, -5.0, 211.0, 0.9, 58.0, 176.0, 15.0, 10.0)")
-  DBI::dbExecute(con, 'INSERT INTO rate_magnitude (rate_id, magn_id, "equals") VALUES (100, 200, true)')
-  DBI::dbExecute(con, 'INSERT INTO rate_magnitude (rate_id, magn_id, "equals") VALUES (101, 201, true)')
-  DBI::dbExecute(con, 'INSERT INTO rate_magnitude (rate_id, magn_id, "equals") VALUES (102, 202, true)')
-  DBI::dbExecute(con, "INSERT INTO magnitude (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, mean, lim_mag)
-    VALUES (200, 'PER', '2015-08-12 00:00:00', '2015-08-12 01:00:00', 140.0, 140.5, 1, 12, 2.5, 6.5)")
-  DBI::dbExecute(con, "INSERT INTO magnitude (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, mean, lim_mag)
-    VALUES (201, 'PER', '2015-08-12 01:00:00', '2015-08-12 02:00:00', 140.6, 141.0, 2, 14, 2.7, 5.8)")
-  DBI::dbExecute(con, "INSERT INTO magnitude (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, mean, lim_mag)
-    VALUES (202, 'GEM', '2015-12-14 00:00:00', '2015-12-14 01:00:00', 250.0, 250.4, 2, 20, 3.2, 6.8)")
-  DBI::dbExecute(con, "INSERT INTO magnitude (id, shower, period_start, period_end, sl_start, sl_end, session_id, freq, mean, lim_mag)
-    VALUES (203, NULL, '2015-12-14 01:00:00', '2015-12-14 02:00:00', 350.0, 5.0, 3, 6, 2.0, 6.1)")
-  DBI::dbExecute(con, "INSERT INTO magnitude_detail (id, magn, freq) VALUES
-    (200, 3, 2.5), (200, 2, 4.0), (200, 1, 5.5),
-    (201, 3, 3.0), (201, 2, 5.0), (201, 1, 6.0),
-    (202, 4, 4.0), (202, 3, 8.0), (202, 2, 8.0),
-    (203, 2, 4.0), (203, 1, 2.0)")
+  # mixed: NA becomes SPO, named entries kept
+  p <- vismeteor:::.build_params(c("PER", NA), NULL, NULL, NULL)
+  expect_equal(p$multi$shower, c("PER", "SPO"))
 
-  # load_vmdb_rates: without extras
-  res <- load_vmdb_rates(con, shower = 'PER')
-  expect_type(res, 'list')
-  expect_true(is.data.frame(res$observations))
-  expect_null(res$sessions)
-  expect_null(res$magnitudes)
-  expect_equal(nrow(res$observations), 2)
-  expect_setequal(res$observations$rate.id, c(100, 101))
+  # NULL → no shower param
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL)
+  expect_null(p$multi$shower)
+})
 
-  # with sessions and magnitudes
-  res <- load_vmdb_rates(con, shower = 'PER', withSessions = TRUE, withMagnitudes = TRUE)
-  expect_true(is.data.frame(res$sessions))
-  expect_true(methods::is(res$magnitudes, 'table'))
-  expect_equal(sort(row.names(res$sessions)), c('1', '2'))
-  expect_equal(sort(row.names(res$magnitudes)), c('200', '201'))
-  expect_setequal(colnames(res$magnitudes), c('1', '2', '3'))
+test_that(".build_params: range params", {
+  p <- vismeteor:::.build_params(NULL, c("2015-08-01", "2015-08-31"), NULL, NULL)
+  expect_equal(p$scalar$period_start, "2015-08-01")
+  expect_equal(p$scalar$period_end,   "2015-08-31")
 
-  # shower filters (including sporadic via NA)
-  expect_setequal(
-    load_vmdb_rates(con, shower = c('PER', 'GEM'))$observations$rate.id,
-    c(100, 101, 102)
-  )
-  expect_equal(
-    load_vmdb_rates(con, shower = c(NA))$observations$rate.id,
-    c(103)
-  )
-  expect_setequal(
-    load_vmdb_rates(con, shower = c('PER', NA))$observations$rate.id,
-    c(100, 101, 103)
-  )
+  p <- vismeteor:::.build_params(NULL, NULL, c(135.5, 145.5), NULL)
+  expect_equal(p$scalar$sl_min, 135.5)
+  expect_equal(p$scalar$sl_max, 145.5)
 
-  # period filters
-  expect_equal(
-    load_vmdb_rates(con, period = c('2015-08-12 00:00:00', '2015-08-12 01:10:00'))$observations$rate.id,
-    c(100)
-  )
-  expect_setequal(
-    load_vmdb_rates(
-      con,
-      period = c(
-        '2015-08-12 00:00:00', '2015-08-12 02:00:00',
-        '2015-12-14 00:00:00', '2015-12-14 02:00:00'
-      )
-    )$observations$rate.id,
-    c(100, 101, 102, 103)
-  )
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, c(5.5, 6.5))
+  expect_equal(p$scalar$lim_magn_min, 5.5)
+  expect_equal(p$scalar$lim_magn_max, 6.5)
+})
 
-  # sl filters
-  expect_equal(
-    load_vmdb_rates(con, shower = 'PER', sl = c(140.0, 141.1))$observations$rate.id,
-    c(101)
-  )
-  expect_equal(
-    load_vmdb_rates(con, shower = c(NA), sl = c(340.0, 10.0))$observations$rate.id,
-    c(103)
-  )
+test_that(".build_params: scalar altitude / id params", {
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL, sun.alt.max = -10)
+  expect_equal(p$scalar$sun_alt_max, -10)
 
-  # limiting magnitude filters
-  expect_setequal(
-    load_vmdb_rates(con, lim.magn = c(6.0, 6.6))$observations$rate.id,
-    c(100, 103)
-  )
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL, moon.alt.max = 5)
+  expect_equal(p$scalar$moon_alt_max, 5)
 
-  # solar and lunar altitude filters
-  expect_equal(
-    load_vmdb_rates(con, sun.alt.max = -16)$observations$rate.id,
-    c(100)
-  )
-  expect_setequal(
-    load_vmdb_rates(con, moon.alt.max = 0)$observations$rate.id,
-    c(100, 101, 103)
-  )
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL, session.id = c(1L, 2L))
+  expect_equal(p$multi$session_id, c(1L, 2L))
 
-  # explicit id filters
-  expect_setequal(
-    load_vmdb_rates(con, session.id = c(2))$observations$rate.id,
-    c(101, 102)
-  )
-  expect_equal(
-    load_vmdb_rates(con, rate.id = c(102))$observations$rate.id,
-    c(102)
-  )
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL,
+                                  id.param = "rate_id", id.values = 100L)
+  expect_equal(p$multi$rate_id, 100L)
+})
 
-  # load_vmdb_magnitudes: without extras
-  res <- load_vmdb_magnitudes(con, shower = 'PER')
-  expect_type(res, 'list')
-  expect_true(is.data.frame(res$observations))
-  expect_null(res$sessions)
-  expect_equal(nrow(res$observations), 2)
+test_that(".build_params: include parameter", {
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL)
+  expect_null(p$scalar$include)
 
-  # with sessions and magnitudes
-  res <- load_vmdb_magnitudes(con, shower = 'PER', withSessions = TRUE, withMagnitudes = TRUE)
-  expect_true(is.data.frame(res$sessions))
-  expect_true(methods::is(res$magnitudes, 'table'))
-  expect_equal(sort(row.names(res$sessions)), c('1', '2'))
-  expect_equal(sort(row.names(res$magnitudes)), c('200', '201'))
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL, withSessions = TRUE)
+  expect_equal(p$scalar$include, "sessions")
 
-  # magnitude filters mirror rate filters
-  expect_equal(
-    load_vmdb_magnitudes(con, session.id = c(3))$observations$magn.id,
-    c(203)
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL, withMagnitudes = TRUE)
+  expect_equal(p$scalar$include, "magnitudes")
+
+  p <- vismeteor:::.build_params(NULL, NULL, NULL, NULL,
+                                  withSessions = TRUE, withMagnitudes = TRUE)
+  expect_equal(p$scalar$include, "sessions,magnitudes")
+})
+
+test_that(".parse_sessions: correct data.frame with factors and row names", {
+  df <- data.frame(
+    id            = 1L,
+    longitude     = 10.0,
+    latitude      = 50.0,
+    elevation     = 0.3,
+    country       = "DE",
+    city          = "Somewhere",
+    observer_id   = "XX",
+    observer_name = "Doe, J.",
+    stringsAsFactors = FALSE
   )
-  expect_equal(
-    load_vmdb_magnitudes(con, magn.id = c(202))$observations$magn.id,
-    c(202)
+  s <- vismeteor:::.parse_sessions(df)
+  expect_true(is.data.frame(s))
+  expect_equal(names(s), c("session.id", "longitude", "latitude", "elevation",
+                            "country", "location.name", "observer.id", "observer.name"))
+  expect_equal(s$session.id, 1L)
+  expect_true(is.factor(s$country))
+  expect_true(is.factor(s$location.name))
+  expect_true(is.factor(s$observer.id))
+  expect_true(is.factor(s$observer.name))
+  expect_equal(row.names(s), "1")
+
+  expect_null(vismeteor:::.parse_sessions(NULL))
+  expect_null(vismeteor:::.parse_sessions(list()))
+})
+
+test_that(".parse_magnitudes: builds xtabs table with correct dims", {
+  df <- data.frame(
+    id   = c(200L, 200L, 200L, 201L, 201L),
+    magn = c(3L,   2L,   1L,   3L,   2L),
+    freq = c(2.5,  4.0,  5.5,  3.0,  5.0),
+    stringsAsFactors = FALSE
   )
-  expect_setequal(
-    load_vmdb_magnitudes(con, period = c('2015-08-12 00:00:00', '2015-08-12 02:00:00'))$observations$magn.id,
-    c(200, 201)
-  )
-  expect_equal(
-    load_vmdb_magnitudes(con, shower = c(NA), sl = c(340.0, 10.0))$observations$magn.id,
-    c(203)
-  )
+  m <- vismeteor:::.parse_magnitudes(df)
+  expect_true(methods::is(m, "table"))
+  expect_setequal(row.names(m), c("200", "201"))
+  expect_setequal(colnames(m),  c("1", "2", "3"))
+  expect_equal(m["200", "2"], 4.0)
+  expect_equal(m["201", "3"], 3.0)
+
+  expect_null(vismeteor:::.parse_magnitudes(NULL))
+  expect_null(vismeteor:::.parse_magnitudes(as.data.frame(list())))
+})
+
+# Integration tests: full pipeline with mocked HTTP responses.
+# Fixture files live under tests/testthat/fixtures/{scenario}/
+# and map to http://example.com/api/v1/{endpoint}.json
+
+test_that("load_vmdb_rates: empty observations", {
+  testthat::skip_if_not_installed("httptest2")
+  httptest2::with_mock_dir("fixtures/empty", {
+    res <- load_vmdb_rates("http://example.com/api/v1")
+    expect_type(res, "list")
+    expect_true(is.data.frame(res$observations))
+    expect_equal(nrow(res$observations), 0)
+    expect_null(res$sessions)
+    expect_null(res$magnitudes)
+  })
+})
+
+test_that("load_vmdb_rates: parses observations, sessions, magnitudes", {
+  testthat::skip_if_not_installed("httptest2")
+  httptest2::with_mock_dir("fixtures/full", {
+    res <- load_vmdb_rates("http://example.com/api/v1")
+    expect_type(res, "list")
+
+    obs <- res$observations
+    expect_true(is.data.frame(obs))
+    expect_equal(nrow(obs), 1)
+    expect_equal(obs$rate.id,      100L)
+    expect_true(is.factor(obs$shower.code))
+    expect_equal(as.character(obs$shower.code), "PER")
+    expect_true(is.factor(obs$session.id))
+    expect_true(is.factor(obs$magn.id))
+    expect_equal(row.names(obs), "100")
+
+    sess <- res$sessions
+    expect_true(is.data.frame(sess))
+    expect_equal(row.names(sess), "1")
+    expect_true(is.factor(sess$country))
+
+    magn <- res$magnitudes
+    expect_true(methods::is(magn, "table"))
+    expect_equal(row.names(magn), "200")
+    expect_setequal(colnames(magn), c("1", "2", "3"))
+  })
+})
+
+test_that("load_vmdb_magnitudes: parses observations, sessions, magnitudes", {
+  testthat::skip_if_not_installed("httptest2")
+  # withMagnitudes defaults to TRUE → suppress include param for clean fixture path
+  httptest2::with_mock_dir("fixtures/full", {
+    res <- load_vmdb_magnitudes("http://example.com/api/v1", withMagnitudes = FALSE)
+    expect_type(res, "list")
+
+    obs <- res$observations
+    expect_true(is.data.frame(obs))
+    expect_equal(nrow(obs), 1)
+    expect_equal(obs$magn.id, 200L)
+    expect_true(is.factor(obs$shower.code))
+    expect_equal(as.character(obs$shower.code), "PER")
+    expect_equal(row.names(obs), "200")
+
+    expect_true(is.data.frame(res$sessions))
+    expect_true(methods::is(res$magnitudes, "table"))
+  })
 })

@@ -1,0 +1,33 @@
+{
+  "observations": [
+    {
+      "id": 200,
+      "shower": "PER",
+      "period_start": "2015-08-12 00:00:00",
+      "period_end": "2015-08-12 01:00:00",
+      "sl_start": 140.0,
+      "sl_end": 140.5,
+      "session_id": 1,
+      "freq": 12,
+      "mean": 2.5,
+      "lim_mag": 6.5
+    }
+  ],
+  "sessions": [
+    {
+      "id": 1,
+      "longitude": 10.0,
+      "latitude": 50.0,
+      "elevation": 0.3,
+      "country": "DE",
+      "city": "Somewhere",
+      "observer_id": "XX",
+      "observer_name": "Doe, J."
+    }
+  ],
+  "magnitudes": [
+    {"id": 200, "magn": 3, "freq": 2.5},
+    {"id": 200, "magn": 2, "freq": 4.0},
+    {"id": 200, "magn": 1, "freq": 5.5}
+  ]
+}

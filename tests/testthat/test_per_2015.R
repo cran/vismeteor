@@ -1,23 +1,11 @@
 test_that("per_2015", {
 
     if (FALSE) {
-        Sys.setenv(TZ="UTC")
-        library(RPostgreSQL)
-
-        # create a connection to the data base
-        con <- dbConnect(
-            PostgreSQL(),
-            dbname = "vmdb",
-            host = "localhost",
-            user = "vmdb"
-        )
-
+        base_url <- "http://localhost:8000/api/v1"
         data_dir <- system.file('data', package = 'vismeteor')
 
-        # load rate observations including
-        # session data and magnitude observations
         PER_2015_rates <- load_vmdb_rates(
-            con,
+            base_url,
             shower = 'PER',
             period = c('2015-01-01', '2015-12-31'),
             withMagnitudes = TRUE,
@@ -29,10 +17,8 @@ test_that("per_2015", {
             compress = 'xz'
         )
 
-        # load magnitude observations including
-        # session data and magnitude observations
         PER_2015_magn <- load_vmdb_magnitudes(
-            con,
+            base_url,
             shower = 'PER',
             period = c('2015-01-01', '2015-12-31'),
             withMagnitudes = TRUE,

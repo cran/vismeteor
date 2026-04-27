@@ -95,7 +95,7 @@ vmidealVstFromMagn <- function(m, lm) {
 
     data.f <- as.factor(arg.data$offset)
     data.s <- split(arg.data, data.f)
-    y <- lapply(data.s, function(data) {
+    y <- lapply(data.s, \(data) {
         x <- data$x
         offset <- data$offset[1]
         params <- .vmidealVstFromMagn.params

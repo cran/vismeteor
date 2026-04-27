@@ -4,10 +4,10 @@
 \alias{load_vmdb}
 \alias{load_vmdb_rates}
 \alias{load_vmdb_magnitudes}
-\title{Loading visual meteor observations from the data base}
+\title{Loading visual meteor observations via the imo-vmdb REST API}
 \usage{
 load_vmdb_rates(
-  dbcon,
+  base_url,
   shower = NULL,
   period = NULL,
   sl = NULL,
@@ -21,7 +21,7 @@ load_vmdb_rates(
 )
 
 load_vmdb_magnitudes(
-  dbcon,
+  base_url,
   shower = NULL,
   period = NULL,
   sl = NULL,
@@ -33,7 +33,8 @@ load_vmdb_magnitudes(
 )
 }
 \arguments{
-\item{dbcon}{database connection.}
+\item{base_url}{character; base URL of the imo-vmdb API, e.g.
+\code{"http://localhost:8000/api/v1"}.}
 
 \item{shower}{character; selects by meteor shower codes.
 \code{NA} loads sporadic meteors.}
@@ -42,19 +43,24 @@ load_vmdb_magnitudes(
 
 \item{sl}{numeric; selects a range of solar longitudes by minimum/maximum.}
 
-\item{lim.magn}{numeric; selects a range of limiting magnitudes by minimum/maximum.}
+\item{lim.magn}{numeric; selects a range of limiting magnitudes by
+minimum/maximum.}
 
-\item{sun.alt.max}{numeric; selects the maximum altitude of the sun.}
+\item{sun.alt.max}{numeric; selects the maximum altitude of the sun
+(rates only).}
 
-\item{moon.alt.max}{numeric; selects the maximum altitude of the moon.}
+\item{moon.alt.max}{numeric; selects the maximum altitude of the moon
+(rates only).}
 
 \item{session.id}{integer; selects by session ids.}
 
 \item{rate.id}{integer; selects rate observations by ids.}
 
-\item{withSessions}{logical; if \code{TRUE}, also load the corresponding session data.}
+\item{withSessions}{logical; if \code{TRUE}, also load the corresponding
+session data.}
 
-\item{withMagnitudes}{logical; if \code{TRUE}, also load the corresponding magnitude observations.}
+\item{withMagnitudes}{logical; if \code{TRUE}, also load the corresponding
+magnitude observations.}
 
 \item{magn.id}{integer; selects magnitude observations by ids.}
 }
@@ -64,18 +70,20 @@ Both functions return a list, with
 \tabular{ll}{
 \code{observations} \tab data frame, rate or magnitude observations,\cr
 \code{sessions} \tab data frame; session data of observations,\cr
-\code{magnitudes} \tab table; contingency table of meteor magnitude frequencies.
+\code{magnitudes} \tab table; contingency table of meteor magnitude
+frequencies.
 }
 
-\code{observations} depends on the function call. \code{load_vmdb_rates} returns a data frame, with
+\code{observations} depends on the function call.
+\code{load_vmdb_rates} returns a data frame with columns:
 
 \tabular{ll}{
 \code{rate.id} \tab unique identifier of the rate observation,\cr
-\code{shower.code} \tab IAU code of the shower. It is \code{NA} in case of sporadic meteors.\cr
+\code{shower.code} \tab IAU code of the shower. \code{NA} for sporadic.\cr
 \code{period.start} \tab start of observation,\cr
 \code{period.end} \tab end of observation,\cr
-\code{sl.start} \tab solarlong at start of observation,\cr
-\code{sl.end} \tab solarlong at start of observation,\cr
+\code{sl.start} \tab solar longitude at start,\cr
+\code{sl.end} \tab solar longitude at end,\cr
 \code{session.id} \tab reference to the session,\cr
 \code{freq} \tab count of observed meteors,\cr
 \code{lim.magn} \tab limiting magnitude,\cr
@@ -86,26 +94,26 @@ Both functions return a list, with
 \code{sun.az} \tab azimuth of the sun,\cr
 \code{moon.alt} \tab altitude of the moon,\cr
 \code{moon.az} \tab azimuth of the moon,\cr
-\code{moon.illum} \tab illumination of the moon (\verb{0.0 .. 1.0}),\cr
+\code{moon.illum} \tab illumination of the moon (\code{0.0 .. 1.0}),\cr
 \code{field.alt} \tab altitude of the field of view (optional),\cr
 \code{field.az} \tab azimuth of the field of view (optional),\cr
-\code{radiant.alt} \tab altitude of the radiant (optional). The zenith attraction is already applied.\cr
+\code{radiant.alt} \tab altitude of the radiant (optional),\cr
 \code{radiant.az} \tab azimuth of the radiant (optional),\cr
 \code{magn.id} \tab reference to the magnitude observations (optional).
 }
 
-\code{load_vmdb_magnitudes} returns a \code{observations} data frame, with
+\code{load_vmdb_magnitudes} returns an \code{observations} data frame with:
 
 \tabular{ll}{
 \code{magn.id} \tab unique identifier of the magnitude observation,\cr
-\code{shower.code} \tab IAU code of the shower. It is \code{NA} in case of sporadic meteors.\cr
+\code{shower.code} \tab IAU code of the shower. \code{NA} for sporadic.\cr
 \code{period.start} \tab start of observation,\cr
 \code{period.end} \tab end of observation,\cr
-\code{sl.start} \tab solarlong at start of observation,\cr
-\code{sl.end} \tab solarlong at start of observation,\cr
+\code{sl.start} \tab solar longitude at start,\cr
+\code{sl.end} \tab solar longitude at end,\cr
 \code{session.id} \tab reference to the session,\cr
 \code{freq} \tab count of observed meteors,\cr
-\code{magn.mean} \tab mean of magnitudes,\cr
+\code{magn.mean} \tab mean magnitude,\cr
 \code{lim.magn} \tab limiting magnitude (optional).
 }
 
@@ -113,8 +121,8 @@ The \code{sessions} data frame contains
 
 \tabular{ll}{
 \code{session.id} \tab unique identifier of the session,\cr
-\code{longitude} \tab location’s longitude,\cr
-\code{latitude} \tab location’s latitude,\cr
+\code{longitude} \tab location's longitude,\cr
+\code{latitude} \tab location's latitude,\cr
 \code{elevation} \tab height above mean sea level in km,\cr
 \code{country} \tab country name,\cr
 \code{location.name} \tab location name,\cr
@@ -123,51 +131,47 @@ The \code{sessions} data frame contains
 }
 
 \code{magnitudes} is a contingency table of meteor magnitude frequencies.
-The row names refer to the id of magnitude observations.
-The column names refer to the magnitude.
+Row names are magnitude observation IDs; column names are magnitude classes.
 }
 \description{
-Loads the data of visual meteor observations from a data base created with
-\href{https://pypi.org/project/imo-vmdb/}{imo-vmdb}.
+Loads visual meteor observations from an
+\href{https://pypi.org/project/imo-vmdb/}{imo-vmdb} web server via its
+REST API.
 }
 \details{
-\code{sl}, \code{period} and \code{lim.magn} expect a vector with successive minimum and maximum values.
+\code{sl}, \code{period} and \code{lim.magn} expect a vector with
+successive minimum and maximum values.
 \code{sun.alt.max} and \code{moon.alt.max} are expected to be scalar values.
+
+\strong{Note:} Unlike the previous DBI-based version, only a single range
+per filter parameter is supported.  If you previously passed a matrix with
+multiple rows to \code{period}, \code{sl}, or \code{lim.magn}, flatten
+them to a single min/max pair or issue multiple calls and combine with
+\code{rbind()}.
 }
 \note{
 Angle values are expected and returned in degrees.
 }
 \examples{
 \dontrun{
-# create a connection to the data base
-con <- dbConnect(
-    PostgreSQL(),
-    dbname = "vmdb",
-    host = "localhost",
-    user = "vmdb"
-)
-
-# load rate observations including
-# session data and magnitude observations
+# Load rate observations including session and magnitude data
 data <- load_vmdb_rates(
-    con,
-    shower = 'PER',
-    sl = c(135.5, 145.5),
-    period = c('2015-08-01', '2015-08-31'),
-    lim.magn = c(5.3, 6.7),
+    base_url       = "http://localhost:8000/api/v1",
+    shower         = "PER",
+    sl             = c(135.5, 145.5),
+    period         = c("2015-08-01", "2015-08-31"),
+    lim.magn       = c(5.3, 6.7),
     withMagnitudes = TRUE,
-    withSessions = TRUE
+    withSessions   = TRUE
 )
 
-# load magnitude observations including
-# session data and magnitude observations
+# Load magnitude observations
 data <- load_vmdb_magnitudes(
-    con,
-    shower = 'PER',
-    sl = c(135.5, 145.5),
-    period = c('2015-08-01', '2015-08-31'),
-    lim.magn = c(5.3, 6.7),
-    withMagnitudes = TRUE,
+    base_url     = "http://localhost:8000/api/v1",
+    shower       = "PER",
+    sl           = c(135.5, 145.5),
+    period       = c("2015-08-01", "2015-08-31"),
+    lim.magn     = c(5.3, 6.7),
     withSessions = TRUE
 )
 }

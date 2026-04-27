@@ -117,7 +117,7 @@
 #' axis(side = 2, at = pretty(p))
 #'
 #' plot(
-#'     function(lm) vismeteor::cvmideal(lm, psi, log = TRUE),
+#'     \(lm) vismeteor::cvmideal(lm, psi, log = TRUE),
 #'     -5, 10,
 #'     main = paste0(
 #'         'Partial convolution of the ideal meteor magnitude distribution\n',
@@ -218,7 +218,7 @@ dvmideal <- function(m, lm, psi, log = FALSE, perception.fun = NULL) {
 
     data.f <- as.factor(paste0(lm, '/', psi))
     data.s <- split(arg.data, data.f)
-    d <- lapply(data.s, function(data) {
+    d <- lapply(data.s, \(data) {
         m <- data$m
         lm <- data$lm[1]
         psi <- data$psi[1]
@@ -342,7 +342,7 @@ pvmideal <- function(m, lm, psi, lower.tail = TRUE, log = FALSE, perception.fun 
 
     data.f <- as.factor(paste0(lm, '/', psi))
     data.s <- split(arg.data, data.f)
-    p <- lapply(data.s, function(data) {
+    p <- lapply(data.s, \(data) {
         m <- data$m
         lm <- data$lm[1]
         psi <- data$psi[1]
@@ -451,7 +451,7 @@ qvmideal <- function(p, lm, psi, lower.tail = TRUE, perception.fun = NULL) {
 
     data.f <- as.factor(paste0(lm, '/', psi))
     data.s <- split(arg.data, data.f)
-    m <- lapply(data.s, function(data) {
+    m <- lapply(data.s, \(data) {
         p <- data$p
         lm <- data$lm[1]
         psi <- data$psi[1]
@@ -531,7 +531,7 @@ cvmideal <- function(lm, psi, log = FALSE, perception.fun = NULL) {
         sum(p) + p.lower.tail
     }
 
-    p <- mapply(function(lm, psi){
+    p <- mapply(\(lm, psi) {
         if (Inf == lm & Inf == psi) return(NA)
         if (-Inf == lm & -Inf == psi) return(NA)
         if (Inf == lm & -Inf == psi) return(if(log) 0.0 else 1.0)

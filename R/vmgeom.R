@@ -175,7 +175,7 @@ dvmgeom <- function(m, lm, r, log = FALSE, perception.fun = NULL) {
 
     data.f <- as.factor(paste0(offset, '/', p.geom))
     data.s <- split(arg.data, data.f)
-    d <- lapply(data.s, function(data) {
+    d <- lapply(data.s, \(data) {
         m <- data$m
         offset <- data$offset[1]
         p.geom <- data$p.geom[1]
@@ -242,7 +242,7 @@ pvmgeom <- function(m, lm, r, lower.tail = TRUE, log = FALSE, perception.fun = N
         stats::dgeom(m, p.geom) * perception.fun(m + offset)
     }
 
-    f.sum <- Vectorize(function(m, offset, p.geom) {
+    f.sum <- Vectorize(\(m, offset, p.geom) {
         m <- as.integer(seq(0, m))
         sum(f.density(m, offset, p.geom))
     })
@@ -285,7 +285,7 @@ pvmgeom <- function(m, lm, r, lower.tail = TRUE, log = FALSE, perception.fun = N
 
     data.f <- as.factor(paste0(offset, '/', p.geom))
     data.s <- split(arg.data, data.f)
-    p <- lapply(data.s, function(data) {
+    p <- lapply(data.s, \(data) {
         m <- data$m
         offset <- data$offset[1]
         p.geom <- data$p.geom[1]
@@ -369,7 +369,7 @@ qvmgeom <- function(p, lm, r, lower.tail = TRUE, perception.fun = NULL) {
 
     data.f <- as.factor(paste0(offset, '/', p.geom))
     data.s <- split(arg.data, data.f)
-    m <- lapply(data.s, function(data) {
+    m <- lapply(data.s, \(data) {
         m.max <- 15L
         p <- data$p
         offset <- data$offset[1]

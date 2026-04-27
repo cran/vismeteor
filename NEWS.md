@@ -1,3 +1,16 @@
+# vismeteor 2.1.0
+
+## Breaking changes
+
+- `load_vmdb_rates()` and `load_vmdb_magnitudes()` now connect to an
+  [imo-vmdb](https://pypi.org/project/imo-vmdb/) REST API instead of a
+  direct database connection. 
+- Multi-range filters for `period`, `sl`, and `lim.magn` (previously a
+  matrix with multiple rows that were OR-joined) are no longer supported.
+  Each filter is collapsed to a single bounding min/max. Use multiple calls
+  combined with `rbind()` if disjoint ranges are needed.
+- Minimum R version raised to **4.1.0** (was 3.5.0) due to use of the native pipe operator `|>` and `\()`.
+
 # vismeteor 2.0.2
 
 ## Changes

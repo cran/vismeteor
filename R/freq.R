@@ -125,7 +125,7 @@ vmtable <- function(mt) {
     # phase 1: round column margin and add dummy row
     margin.v <- as.integer(as.vector(margin.table(mt2c, 2L)))
     # dummy row absorbs the 0.5 remainder per column so every column margin stays intact after rounding
-    dummy.row <- diff(c(0L, sapply(cumsum(margin.v), function(freq) {
+    dummy.row <- diff(c(0L, sapply(cumsum(margin.v), \(freq) {
         2L * (freq %/% 2L) # round down
     }))) - margin.v
     mt2c <- rbind(mt2c, dummy.row) # add dummy row

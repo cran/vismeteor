@@ -1,0 +1,45 @@
+{
+  "observations": [
+    {
+      "id": 100,
+      "shower": "PER",
+      "period_start": "2015-08-12 00:00:00",
+      "period_end": "2015-08-12 01:00:00",
+      "sl_start": 140.0,
+      "sl_end": 140.5,
+      "session_id": 1,
+      "freq": 12,
+      "lim_mag": 6.5,
+      "t_eff": 0.9,
+      "f": 1.0,
+      "sidereal_time": 10.0,
+      "sun_alt": -18.0,
+      "sun_az": 120.0,
+      "moon_alt": -30.0,
+      "moon_az": 200.0,
+      "moon_illum": 0.5,
+      "field_alt": 50.0,
+      "field_az": 180.0,
+      "rad_alt": 45.0,
+      "rad_az": 90.0,
+      "magn_id": 200
+    }
+  ],
+  "sessions": [
+    {
+      "id": 1,
+      "longitude": 10.0,
+      "latitude": 50.0,
+      "elevation": 0.3,
+      "country": "DE",
+      "city": "Somewhere",
+      "observer_id": "XX",
+      "observer_name": "Doe, J."
+    }
+  ],
+  "magnitudes": [
+    {"id": 200, "magn": 3, "freq": 2.5},
+    {"id": 200, "magn": 2, "freq": 4.0},
+    {"id": 200, "magn": 1, "freq": 5.5}
+  ]
+}

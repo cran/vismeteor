@@ -49,16 +49,17 @@ mt <- as.table(matrix(
         0.0, 0.0, 2.5, 0.5, 0.0, 1.0,
         0.0, 1.5, 2.0, 0.5, 0.0, 0.0,
         1.0, 0.0, 0.0, 3.0, 2.5, 0.5
-    ), nrow = 3, ncol = 6, byrow = TRUE
+    ),
+    nrow = 3, ncol = 6, byrow = TRUE
 ))
 colnames(mt) <- seq(6)
-rownames(mt) <- c('A', 'B', 'C')
+rownames(mt) <- c("A", "B", "C")
 mt
 margin.table(mt, 1)
 margin.table(mt, 2)
 
 # contingency table with integer values
-(mt.int <- vmtable(mt))
-margin.table(mt.int, 1)
-margin.table(mt.int, 2)
+(mt_int <- vmtable(mt))
+margin.table(mt_int, 1)
+margin.table(mt_int, 2)
 }

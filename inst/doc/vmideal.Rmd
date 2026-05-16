@@ -15,8 +15,8 @@ vignette: >
 ```{r setup, include = FALSE}
 library(vismeteor)
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>"
 )
 ```
 
@@ -51,10 +51,10 @@ which also includes the limiting magnitude.
 
 ```{r, echo=TRUE, results='hide'}
 observations <- with(PER_2015_magn$observations, {
-    idx <- !is.na(lim.magn) & sl.start > 135.81 & sl.end < 135.87
+    idx <- !is.na(lim_magn) & sl_start > 135.81 & sl_end < 135.87
     data.frame(
-        magn.id = magn.id[idx],
-        lim.magn = lim.magn[idx]
+        magn_id = magn_id[idx],
+        lim_magn = lim_magn[idx]
     )
 })
 head(observations, 5) # Example values
@@ -72,24 +72,24 @@ Using
 
 ```{r, echo=TRUE, results='hide'}
 magnitudes <- with(new.env(), {
-  magnitudes <- merge(
-      observations,
-      as.data.frame(PER_2015_magn$magnitudes),
-      by = 'magn.id'
-  )
-  magnitudes$magn <- as.integer(as.character(magnitudes$magn))
-  subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5)
+    magnitudes <- merge(
+        observations,
+        as.data.frame(PER_2015_magn$magnitudes),
+        by = "magn_id"
+    )
+    magnitudes$magn <- as.integer(as.character(magnitudes$magn))
+    subset(magnitudes, (magnitudes$lim_magn - magnitudes$magn) > -0.5)
 })
-head(magnitudes[magnitudes$Freq>0,], 5) # Example values
+head(magnitudes[magnitudes$Freq > 0, ], 5) # Example values
 ```
 
 we obtain a data frame with the absolute observed frequencies `Freq` for each
 observation of a magnitude class. The expression
-`subset(magnitudes, (magnitudes$lim.magn - magnitudes$magn) > -0.5`
+`subset(magnitudes, (magnitudes$lim_magn - magnitudes$magn) > -0.5`
 ensures that meteors fainter than the limiting magnitude are not used if they exist.
 
 ```{r, echo=FALSE, results='asis'}
-knitr::kable(head(magnitudes[magnitudes$Freq>0,], 5))
+knitr::kable(head(magnitudes[magnitudes$Freq > 0, ], 5))
 ```
 
 This data frame contains a total of `r sum(magnitudes$Freq)` meteors.
@@ -110,44 +110,44 @@ as `optim()` identifies a minimum.
 # maximum likelihood estimation (MLE) of psi
 result <- with(magnitudes, {
     # log likelihood function
-    ll <- function(psi) -sum(Freq * dvmideal(magn, lim.magn, psi, log=TRUE))
-    psi.start <- 6.0 # starting value
-    psi.lower <- 4.0 # lowest expected value
-    psi.upper <- 10.0 # highest expected value
+    ll <- function(psi) -sum(Freq * dvmideal(magn, lim_magn, psi, log = TRUE))
+    psi_start <- 6.0 # starting value
+    psi_lower <- 4.0 # lowest expected value
+    psi_upper <- 10.0 # highest expected value
     # find minimum
-    optim(psi.start, ll, method='Brent', lower=psi.lower, upper=psi.upper, hessian=TRUE)
+    optim(psi_start, ll, method = "Brent", lower = psi_lower, upper = psi_upper, hessian = TRUE)
 })
 ```
 
 This gives the expected value and the variance of the parameter:
 
 ```{r, echo=TRUE}
-psi.mean <- result$par # mean of psi
-print(psi.mean)
-psi.var <- 1/result$hessian[1][1] # variance of psi
-print(psi.var)
+psi_mean <- result$par # mean of psi
+print(psi_mean)
+psi_var <- 1 / result$hessian[1][1] # variance of psi
+print(psi_var)
 ```
 
 We can additionally visualize the likelihood function here.
 
 ```{r, echo=TRUE, results='hide'}
 with(new.env(), {
-  data.plot <- data.frame(psi = seq(4.0, 11, 0.1))
-  data.plot$ll <- mapply(function(psi){
-    with(magnitudes, {
-      # log likelihood function
-      sum(Freq * dvmideal(magn, lim.magn, psi, log=TRUE))
-    })
-  }, data.plot$psi)
-  data.plot$l <- exp(data.plot$ll - max(data.plot$ll))
-  data.plot$l <- data.plot$l / sum(data.plot$l)
-  plot(data.plot$psi, data.plot$l,
-    type = "l",
-    col = "blue",
-    xlab = "psi",
-    ylab = "likelihood"
-  )
-  abline(v = result$par, col = "red", lwd = 1)
+    data_plot <- data.frame(psi = seq(4.0, 11, 0.1))
+    data_plot$ll <- mapply(function(psi) {
+        with(magnitudes, {
+            # log likelihood function
+            sum(Freq * dvmideal(magn, lim_magn, psi, log = TRUE))
+        })
+    }, data_plot$psi)
+    data_plot$l <- exp(data_plot$ll - max(data_plot$ll))
+    data_plot$l <- data_plot$l / sum(data_plot$l)
+    plot(data_plot$psi, data_plot$l,
+        type = "l",
+        col = "blue",
+        xlab = "psi",
+        ylab = "likelihood"
+    )
+    abline(v = result$par, col = "red", lwd = 1)
 })
 ```
 
@@ -182,21 +182,21 @@ This accounts for the nonlinearity of the transformation and provides appropriat
 estimates for $\psi$.
 
 ```{r, echo=TRUE, results='show'}
-tm.mean <- with(magnitudes, {
-  N <- sum(Freq)
-  tm <- vmidealVstFromMagn(magn, lim.magn)
-  tm.mean <- sum(Freq * tm)/N
-  tm.var <- sum(Freq * (tm - tm.mean)^2)/(N-1)
-  tm.mean.var <- tm.var / N
-  list('val' = tm.mean, 'var' = tm.mean.var, 'sd' = sqrt(tm.mean.var))
+tm_mean <- with(magnitudes, {
+    N <- sum(Freq)
+    tm <- vmideal_vst_from_magn(magn, lim_magn)
+    tm_mean <- sum(Freq * tm) / N
+    tm_var <- sum(Freq * (tm - tm_mean)^2) / (N - 1)
+    tm_mean_var <- tm_var / N
+    list("val" = tm_mean, "var" = tm_mean_var, "sd" = sqrt(tm_mean_var))
 })
 ```
 
 Thus, one obtains the mean and the variance of the mean of `tm`.
 
 ```{r, echo=TRUE, results='show'}
-print(paste('tm mean:', tm.mean$val))
-print(paste('tm var:', tm.mean$var))
+print(paste("tm mean:", tm_mean$val))
+print(paste("tm var:", tm_mean$var))
 ```
 
 Using the bootstrap method, it can be assessed whether the mean is normally distributed.
@@ -204,11 +204,11 @@ Using the bootstrap method, it can be assessed whether the mean is normally dist
 
 
 ```{r, echo=TRUE, results='show'}
-tm.means <- with(magnitudes, {
+tm_means <- with(magnitudes, {
     N <- sum(Freq)
-    tm <- vmidealVstFromMagn(magn, lim.magn)
+    tm <- vmideal_vst_from_magn(magn, lim_magn)
     replicate(50000, {
-      mean(sample(tm, size = N, replace = TRUE, prob = Freq))
+        mean(sample(tm, size = N, replace = TRUE, prob = Freq))
     })
 })
 ```
@@ -217,21 +217,21 @@ The graphical representation indicates that this is indeed approximately the cas
 
 ```{r, echo=TRUE, results='show'}
 with(new.env(), {
-  tm.min <- tm.mean$val - 3 * tm.mean$sd
-  tm.max <- tm.mean$val + 3 * tm.mean$sd
-  tm.means <- subset(tm.means, tm.means > tm.min & tm.means < tm.max)
-  brks <- seq(min(tm.means) - 0.02, max(tm.means) + 0.02, by = 0.02)
-  hist(tm.means,
-    breaks = brks,
-    col = "skyblue",
-    border = "black",
-    main = "Histogram of mean tm",
-    xlab = "tm",
-    ylab = "count",
-    xaxt = "n"
-  )
-  axis(1, at = seq(round(min(brks), 1), round(max(brks), 1) + 0.1, by = 0.1))
-  abline(v = 0, col = "red", lwd = 1)
+    tm_min <- tm_mean$val - 3 * tm_mean$sd
+    tm_max <- tm_mean$val + 3 * tm_mean$sd
+    tm_means <- subset(tm_means, tm_means > tm_min & tm_means < tm_max)
+    brks <- seq(min(tm_means) - 0.02, max(tm_means) + 0.02, by = 0.02)
+    hist(tm_means,
+        breaks = brks,
+        col = "skyblue",
+        border = "black",
+        main = "Histogram of mean tm",
+        xlab = "tm",
+        ylab = "count",
+        xaxt = "n"
+    )
+    axis(1, at = seq(round(min(brks), 1), round(max(brks), 1) + 0.1, by = 0.1))
+    abline(v = 0, col = "red", lwd = 1)
 })
 ```
 
@@ -246,15 +246,15 @@ Although the expected value is clearly above `0.0` and can therefore be used, it
 in this context to interpret the value as the median.
 
 ```{r, echo=TRUE}
-lim.magn.mean <- with(magnitudes, {
+lim_magn_mean <- with(magnitudes, {
     N <- sum(Freq)
-    sum(Freq * lim.magn)/N
+    sum(Freq * lim_magn) / N
 })
-print(paste('lim.magn.mean:', lim.magn.mean))
-print(paste('mean psi:', vmidealVstToPsi(tm.mean$val, lim.magn.mean)))
+print(paste("lim_magn_mean:", lim_magn_mean))
+print(paste("mean psi:", vmideal_vst_to_psi(tm_mean$val, lim_magn_mean)))
 ```
 
-The mean limiting magnitude `lim.magn.mean` is required to estimate the location parameter $\psi$.
+The mean limiting magnitude `lim_magn_mean` is required to estimate the location parameter $\psi$.
 In visual meteor observations, different limiting magnitudes usually occur.
 In practice, the observed quantity is the difference between $\psi$ and the limiting magnitude
 for each observation. Since $\psi$ is unknown, one must assume that the mean `tm` is correlated
@@ -275,7 +275,7 @@ In practice, however, it is preferable to use a confidence interval estimate.
 For example, one can estimate that $\psi$ is, with 10 percent probability, not smaller than:
 
 ```{r, echo=TRUE}
-print(vmidealVstToPsi(qnorm(0.90, tm.mean$val, tm.mean$sd), lim.magn.mean))
+print(vmideal_vst_to_psi(qnorm(0.90, tm_mean$val, tm_mean$sd), lim_magn_mean))
 ```
 
 ## Residual Analysis
@@ -287,26 +287,26 @@ the expected frequencies. Then, using the estimated parameter, we retrieve the r
 frequencies `p` for each observation and add them to the data frame `magnitudes`:
 
 ```{r, echo=TRUE, results='asis'}
-psi.mean <- vmidealVstToPsi(tm.mean$val, lim.magn.mean)
-magnitudes$p <- with(magnitudes, dvmideal(m = magn, lm = lim.magn, psi.mean))
+psi_mean <- vmideal_vst_to_psi(tm_mean$val, lim_magn_mean)
+magnitudes$p <- with(magnitudes, dvmideal(m = magn, lm = lim_magn, psi_mean))
 ```
 
 We must also consider the probabilities for the magnitude class with the brightest meteors.
 
 ```{r, echo=TRUE, results='hide'}
-magn.min <- min(magnitudes$magn)
+magn_min <- min(magnitudes$magn)
 ```
 
-The smallest magnitude class `magn.min` is `r magn.min`. In calculating the probabilities,
-we assume that the magnitude class `r magn.min` contains meteors that are either brighter
-or equally bright as `r magn.min` and thus use the function `pvmideal()` to determine
+The smallest magnitude class `magn_min` is `r magn_min`. In calculating the probabilities,
+we assume that the magnitude class `r magn_min` contains meteors that are either brighter
+or equally bright as `r magn_min` and thus use the function `pvmideal()` to determine
 their probability.
 
 ```{r, echo=TRUE, results='asis'}
-idx <- magnitudes$magn == magn.min
+idx <- magnitudes$magn == magn_min
 magnitudes$p[idx] <- with(
-    magnitudes[idx,],
-    pvmideal(m = magn + 1L, lm = lim.magn, psi.mean, lower.tail = TRUE)
+    magnitudes[idx, ],
+    pvmideal(m = magn + 1L, lm = lim_magn, psi_mean, lower.tail = TRUE)
 )
 ```
 
@@ -314,13 +314,13 @@ This ensures that the probability of observing a meteor of any given magnitude i
 This is known as the normalization condition. Accordingly, the Chi-Square goodness-of-fit test
 will fail if this condition is not met.
 
-We now create the contingency table `magnitutes.observed` for the observed meteor magnitudes
+We now create the contingency table `magnitutes_observed` for the observed meteor magnitudes
 and its margin table.
 
 ```{r, echo=TRUE}
-magnitutes.observed <- xtabs(Freq ~ magn.id + magn, data = magnitudes)
-magnitutes.observed.mt <- margin.table(magnitutes.observed, margin = 2) 
-print(magnitutes.observed.mt)
+magnitutes_observed <- xtabs(Freq ~ magn_id + magn, data = magnitudes)
+magnitutes_observed_mt <- margin.table(magnitutes_observed, margin = 2)
+print(magnitutes_observed_mt)
 ```
 
 Next, we check which magnitude classes need to be aggregated so that each contains
@@ -331,41 +331,41 @@ a magnitude class `0-`. Meteors with a brightness less than `4` are grouped here
 magnitude class `4+`, and a new contingency table magnitudes.observed is created:
 
 ```{r, echo=TRUE}
-magnitudes$magn[magnitudes$magn <= 0] <- '0-'
-magnitudes$magn[magnitudes$magn >= 4] <- '4+'
-magnitutes.observed <- xtabs(Freq ~ magn.id + magn, data = magnitudes)
-print(margin.table(magnitutes.observed, margin = 2))
+magnitudes$magn[magnitudes$magn <= 0] <- "0-"
+magnitudes$magn[magnitudes$magn >= 4] <- "4+"
+magnitutes_observed <- xtabs(Freq ~ magn_id + magn, data = magnitudes)
+print(margin.table(magnitutes_observed, margin = 2))
 ```
 
 We now need the corresponding expected relative frequencies
 
 ```{r, echo=TRUE}
-magnitutes.expected <- xtabs(p ~ magn.id + magn, data = magnitudes)
-magnitutes.row_freq <- margin.table(magnitutes.observed, margin = 1)
-magnitutes.expected <- sweep(magnitutes.expected, 1, magnitutes.row_freq, `*`)
-magnitutes.expected <- magnitutes.expected/sum(magnitutes.expected)
-print(sum(magnitudes$Freq) * margin.table(magnitutes.expected, margin = 2))
+magnitutes_expected <- xtabs(p ~ magn_id + magn, data = magnitudes)
+magnitutes_row_freq <- margin.table(magnitutes_observed, margin = 1)
+magnitutes_expected <- sweep(magnitutes_expected, 1, magnitutes_row_freq, `*`)
+magnitutes_expected <- magnitutes_expected / sum(magnitutes_expected)
+print(sum(magnitudes$Freq) * margin.table(magnitutes_expected, margin = 2))
 ```
 
 and then carry out the Chi-Square goodness-of-fit test:
 
 ```{r, echo=TRUE, results='asis'}
-chisq.test.result <- chisq.test(
-    x = margin.table(magnitutes.observed, margin = 2),
-    p = margin.table(magnitutes.expected, margin = 2)
+chisq_test_result <- chisq.test(
+    x = margin.table(magnitutes_observed, margin = 2),
+    p = margin.table(magnitutes_expected, margin = 2)
 )
 ```
 
 As a result, we obtain the p-value:
 
 ```{r, echo=TRUE}
-chi2.df <- chisq.test.result$parameter - 1
-chi2.pval <- pchisq(chisq.test.result$statistic, df = chi2.df, lower.tail = FALSE)
-print(chi2.pval)
+chi2_df <- chisq_test_result$parameter - 1
+chi2_pval <- pchisq(chisq_test_result$statistic, df = chi2_df, lower.tail = FALSE)
+print(chi2_pval)
 ```
 
 If we set the level of significance at 5 percent, then it is clear that the p-value with
-`r unname(chi2.pval)` is greater than 0.05. Thus, under the assumption that the
+`r unname(chi2_pval)` is greater than 0.05. Thus, under the assumption that the
 magnitude distribution follows the ideal meteor magnitude distribution and that
 the perception probabilities are correct (i.e., error-free or precisely known),
 these assumptions cannot be rejected. However, the converse is not true; the assumptions
@@ -375,21 +375,21 @@ a conclusion.
 To verify the p-value, we also graphically represent the Pearson residuals:
 
 ```{r, fig.show='hold'}
-chisq.test.residuals <- with(new.env(), {
-    chisq.test.residuals <- residuals(chisq.test.result)
-    v <- as.vector(chisq.test.residuals)
-    names(v) <- names(chisq.test.residuals)
+chisq_test_residuals <- with(new.env(), {
+    chisq_test_residuals <- residuals(chisq_test_result)
+    v <- as.vector(chisq_test_residuals)
+    names(v) <- names(chisq_test_residuals)
     v
 })
 
 plot(
-    chisq.test.residuals,
-    main="Residuals of the chi-square goodness-of-fit test",
-    xlab="m",
-    ylab="Residuals",
-    ylim=c(-3, 3),
+    chisq_test_residuals,
+    main = "Residuals of the chi-square goodness-of-fit test",
+    xlab = "m",
+    ylab = "Residuals",
+    ylim = c(-3, 3),
     xaxt = "n"
 )
-abline(h=0.0, lwd=2)
-axis(1, at = seq_along(chisq.test.residuals), labels = names(chisq.test.residuals))
+abline(h = 0.0, lwd = 2)
+axis(1, at = seq_along(chisq_test_residuals), labels = names(chisq_test_residuals))
 ```

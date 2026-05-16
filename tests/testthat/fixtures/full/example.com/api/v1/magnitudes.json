@@ -10,7 +10,7 @@
       "session_id": 1,
       "freq": 12,
       "mean": 2.5,
-      "lim_mag": 6.5
+      "lim_magn": 6.5
     }
   ],
   "sessions": [
@@ -20,7 +20,7 @@
       "latitude": 50.0,
       "elevation": 0.3,
       "country": "DE",
-      "city": "Somewhere",
+      "location_name": "Somewhere",
       "observer_id": "XX",
       "observer_name": "Doe, J."
     }

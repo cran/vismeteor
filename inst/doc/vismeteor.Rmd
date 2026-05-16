@@ -13,16 +13,16 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>"
 )
 ```
 
 ```{r setup, include = FALSE}
 library(vismeteor)
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>"
 )
 ```
 
@@ -49,6 +49,75 @@ For visual observations of meteor magnitudes, the observed counts can be specifi
 fractional values (half meteors). This package includes a function for unbiased rounding
 of these fractional values to use standard tools in R that only allow integer values.
 
+Beyond magnitude distributions, the package also helps in analyzing how meteor activity
+varies over time or solar longitude. It provides a routine for fitting smooth, parsimonious
+profiles to noisy meteor count series, automatically choosing a small set of spline knot
+positions from a user-supplied candidate grid under an information criterion or
+cross-validation score.
+
+## Knot Selection for Spline Models
+
+The function `select_knots()` performs greedy stepwise selection of interior spline knots from
+a user-supplied candidate grid. In each step it adds (forward) or removes (backward) the single
+knot that most improves a user-defined score, such as BIC, AIC, or a cross-validation criterion.
+The routine is model-agnostic: the scoring function is responsible for fitting the model — a
+Poisson GLM, a natural cubic spline via `lm()`, or any other form — so `select_knots()` can
+be reused across very different analyses.
+
+A typical application is fitting the activity profile of a meteor shower over solar longitude
+through noisy counts. A fine grid of candidate positions captures where the curve *could* bend;
+`select_knots()` reduces it to a small subset where the data actually demand a bend, yielding
+a smooth, parsimonious fit.
+
+```{r, echo=TRUE}
+set.seed(1)
+x <- seq(0, 10, length.out = 200)
+y <- rpois(length(x), lambda = 50 + 30 * sin(x))
+dat <- data.frame(x = x, y = y)
+
+fit <- \(d, knots) {
+    f <- if (length(knots) == 0L) {
+        y ~ splines::ns(x)
+    } else {
+        y ~ splines::ns(x, knots = knots)
+    }
+    glm(f, family = poisson(), data = d)
+}
+score_bic <- \(d, knots) fit(d, knots) |> BIC()
+
+result <- select_knots(
+    dat,
+    knot_candidates = seq(1, 9, by = 0.5),
+    score_fun = score_bic
+)
+final_knots <- sort(c(result$knots, result$fixed_knots))
+final_fit <- fit(dat, final_knots)
+
+op <- par(mar = c(7, 4, 4, 2) + 0.1)
+plot(
+    x, y,
+    pch = 20, col = "gray",
+    main = "Poisson spline fit with selected knots",
+    xlab = "x", ylab = "count"
+)
+lines(x, 50 + 30 * sin(x), col = "darkgreen", lwd = 2, lty = 2)
+lines(x, final_fit |> predict(type = "response"), col = "blue", lwd = 2)
+abline(v = final_knots, col = "red", lty = 3)
+legend(
+    "bottom", inset = c(0, -0.35),
+    legend = c("true mean", "spline fit", "selected knots"),
+    col = c("darkgreen", "blue", "red"),
+    lty = c(2, 1, 3),
+    lwd = c(2, 2, 1),
+    horiz = TRUE,
+    bty = "n",
+    xpd = TRUE
+)
+par(op)
+```
+
+See `?select_knots` and `vignette("select_knots")` for more information.
+
 ## Perception probabilities
 
 Meteors appear randomly distributed across the sky. The perception of an observer can
@@ -73,12 +142,12 @@ their own empirical data or models into the analysis.
 
 ```{r, echo=TRUE}
 plot(
-  vmperception,
-  -0.5, 8,
-  main = "Perception probability of visual meteor magnitudes",
-  col = "blue",
-  xlab = "limiting magnitude - meteor magnitude",
-  ylab = "p"
+    vmperception,
+    -0.5, 8,
+    main = "Perception probability of visual meteor magnitudes",
+    col = "blue",
+    xlab = "limiting magnitude - meteor magnitude",
+    ylab = "p"
 )
 ```
 
@@ -116,10 +185,10 @@ p <- vismeteor::dvmgeom(m, limmag, r)
 barplot(
     p,
     names.arg = m,
-    main = paste0('Density (r = ', r, ', limmag = ', limmag, ')'),
+    main = paste0("Density (r = ", r, ", limmag = ", limmag, ")"),
     col = "blue",
-    xlab = 'm',
-    ylab = 'p',
+    xlab = "m",
+    ylab = "p",
     border = "blue",
     space = 0.5
 )
@@ -154,10 +223,10 @@ p <- vismeteor::dvmideal(m, limmag, psi)
 barplot(
     p,
     names.arg = m,
-    main = paste0('Density (psi = ', psi, ', limmag = ', limmag, ')'),
+    main = paste0("Density (psi = ", psi, ", limmag = ", limmag, ")"),
     col = "blue",
-    xlab = 'm',
-    ylab = 'p',
+    xlab = "m",
+    ylab = "p",
     border = "blue",
     space = 0.5
 )
@@ -191,32 +260,33 @@ mt <- as.table(matrix(
         0.0, 0.0, 2.5, 0.5, 0.0, 1.0,
         0.0, 1.5, 2.0, 0.5, 0.0, 0.0,
         1.0, 0.0, 0.0, 3.0, 2.5, 0.5
-    ), nrow = 3, ncol = 6, byrow = TRUE
+    ),
+    nrow = 3, ncol = 6, byrow = TRUE
 ))
 colnames(mt) <- seq(6)
-rownames(mt) <- c('A', 'B', 'C')
+rownames(mt) <- c("A", "B", "C")
 margin.table(mt, 1)
 margin.table(mt, 2)
 
 # contingency table with integer values
-(mt.int <- vmtable(mt))
-margin.table(mt.int, 1)
-margin.table(mt.int, 2)
+(mt_int <- vmtable(mt))
+margin.table(mt_int, 1)
+margin.table(mt_int, 2)
 ```
 
 See `?vmtable` for more information.
 
 ## Quantile Analysis with Minimum Meteor Count
 
-The function `freq.quantile()` is tailored for analyzing time series data in visual
+The function `freq_quantile()` is tailored for analyzing time series data in visual
 meteor observation, where the count of meteors is recorded over specific time intervals.
 
 Unlike traditional methods that sort quantiles based on time and percent, which often result
-in some quantiles having fewer meteors than desired, `freq.quantile()` constructs quantiles
+in some quantiles having fewer meteors than desired, `freq_quantile()` constructs quantiles
 with a focus on ensuring a minimum number of meteors in each quantile.
 
 This method addresses the challenge of varying meteor counts in each interval, including those
-with zero meteors. By utilizing `freq.quantile()`, users can effectively divide the time series
+with zero meteors. By utilizing `freq_quantile()`, users can effectively divide the time series
 into quantiles that are both time-based and density-based, enhancing the understanding of meteor
 occurrence and distribution over the observed period while ensuring each quantile meets the
 minimum count criterion.
@@ -229,27 +299,27 @@ The objective is to group these counts into quantiles while maintaining their ch
 ensuring that each quantile contains at least 10 meteors.
 
 ```{r, echo=TRUE}
-freq <- c(1,8,3,3,4,9,5,0,0,2,7,8,2,6,4)
-f <- freq.quantile(freq, 10)
+freq <- c(1, 8, 3, 3, 4, 9, 5, 0, 0, 2, 7, 8, 2, 6, 4)
+f <- freq_quantile(freq, 10)
 print(f)
 print(tapply(freq, f, sum))
 ```
 
-See `?freq.quantile` for more information.
+See `?freq_quantile` for more information.
 
 ## Interfacing VMDB Data with VMDB Loaders
 
-The functions `load_vmdb_rates()` and `load_vmdb_magnitudes()` are designed to interface with the
-[imo-vmdb](https://pypi.org/project/imo-vmdb/)
-application, processing data specifically exported from the Visual Meteor Database (VMDB) in
-CSV format. After these CSV exports are verified and validated with the _imo-vmdb_ application,
-they are stored in a relational database, which enhances the accessibility and usability of the
-data compared to its original CSV format. This storage method establishes relationships between
-data records and enriches them with additional information derived from the original data records.
+The functions `load_vmdb_rates()` and `load_vmdb_magnitudes()` query an
+[imo-vmdb](https://pypi.org/project/imo-vmdb/) web server through its REST API to retrieve
+visual meteor observations from the Visual Meteor Database (VMDB). The imo-vmdb server ingests
+and validates the original VMDB exports and serves them in a structured, relational form, so
+callers receive enriched and consistent observation records rather than raw exports.
 
-Utilizing these helpers, users can efficiently query and retrieve specific datasets relevant
-to their meteor observation analysis. This streamlined access facilitates more comprehensive
-and targeted research.
+Both functions take a `base_url` pointing at the API endpoint and accept filters such as
+`shower`, `period`, `sl` (solar longitude) and `lim_magn` (limiting magnitude). For rate
+observations, `sun_alt_max` and `moon_alt_max` further constrain sky conditions. Optional
+companion data — observing session metadata and per-observation magnitude distributions —
+can be requested via `with_sessions` and `with_magnitudes`.
 
 Within this package, `PER_2015_rates` and `PER_2015_magn` are provided as example data sets.
 They are included for testing and training purposes, allowing users to

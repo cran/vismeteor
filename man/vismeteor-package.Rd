@@ -23,4 +23,9 @@ Useful links:
 \author{
 \strong{Maintainer}: Janko Richter \email{janko@richtej.de}
 
+Authors:
+\itemize{
+  \item Janko Richter \email{janko@richtej.de}
+}
+
 }

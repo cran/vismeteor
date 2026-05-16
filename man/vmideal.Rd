@@ -9,15 +9,22 @@
 \alias{cvmideal}
 \title{Ideal Distribution of Visual Meteor Magnitudes}
 \usage{
-dvmideal(m, lm, psi, log = FALSE, perception.fun = NULL)
+dvmideal(m, lm, psi, log = FALSE, perception_fun = vmperception)
 
-pvmideal(m, lm, psi, lower.tail = TRUE, log = FALSE, perception.fun = NULL)
+pvmideal(
+  m,
+  lm,
+  psi,
+  lower.tail = TRUE,
+  log = FALSE,
+  perception_fun = vmperception
+)
 
-qvmideal(p, lm, psi, lower.tail = TRUE, perception.fun = NULL)
+qvmideal(p, lm, psi, lower.tail = TRUE, perception_fun = vmperception)
 
-rvmideal(n, lm, psi, perception.fun = NULL)
+rvmideal(n, lm, psi, perception_fun = vmperception)
 
-cvmideal(lm, psi, log = FALSE, perception.fun = NULL)
+cvmideal(lm, psi, log = FALSE, perception_fun = vmperception)
 }
 \arguments{
 \item{m}{integer; visual meteor magnitude.}
@@ -28,7 +35,7 @@ cvmideal(lm, psi, log = FALSE, perception.fun = NULL)
 
 \item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
 
-\item{perception.fun}{function; optional perception probability function.
+\item{perception_fun}{function; optional perception probability function.
 The default is \link{vmperception}.}
 
 \item{lower.tail}{logical; if \code{TRUE} (default), probabilities are
@@ -62,7 +69,8 @@ for the ideal distribution of visual meteor magnitudes.
 \details{
 The density of the \link[=mideal]{ideal distribution of meteor magnitudes} is
 \deqn{
-    {\displaystyle f(m) = \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
+    {\displaystyle f(m) = \frac{\mathrm{d}p}{\mathrm{d}m} =
+     \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 }
 where \eqn{m} denotes the continuous (real-valued) meteor magnitude,
 \eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant, and
@@ -73,7 +81,8 @@ Hence, this distribution is discrete and its probability mass function is given 
 \deqn{
 P[M = m] \sim
 \begin{cases}
-  g(m_{\mathrm{lim}} - m) \displaystyle \int\limits_{m-0.5}^{m+0.5} f(u) \, \mathrm{d}u, & \text{if } m_{\mathrm{lim}} - m > -0.5,\\[5pt]
+  g(m_{\mathrm{lim}} - m) \displaystyle \int\limits_{m-0.5}^{m+0.5} f(u) \, \mathrm{d}u,
+  & \text{if } m_{\mathrm{lim}} - m > -0.5,\\[5pt]
   0 & \text{otherwise,}
 \end{cases}
 }
@@ -82,11 +91,11 @@ and \eqn{m} the integer meteor magnitude.
 The function \eqn{f(\cdot)} is the continuous density of the ideal magnitude distribution,
 and \eqn{g(\cdot)} denotes the \link[=vmperception]{perception probability function}.
 
-If a different perception probability function \code{perception.fun} is supplied,
+If a different perception probability function \code{perception_fun} is supplied,
 it must have the signature \verb{function(x)} and return the perception probabilities of
 the difference \code{x} between the limiting magnitude and the meteor magnitude.
-If \code{x >= 15.0}, the \code{perception.fun} function should return a perception probability of \code{1.0}.
-The argument \code{perception.fun} is resolved using \link{match.fun}.
+If \code{x >= 15.0}, the \code{perception_fun} function should return a perception probability of \code{1.0}.
+The argument \code{perception_fun} is resolved using \link{match.fun}.
 }
 \examples{
 N <- 100
@@ -99,11 +108,11 @@ limmag <- 6.5
 
 # log likelihood function
 lld <- function(psi) {
-    -sum(freq * dvmideal(m, limmag, psi, log=TRUE))
+    -sum(freq * dvmideal(m, limmag, psi, log = TRUE))
 }
 
 # maximum likelihood estimation (MLE) of psi
-est <- optim(2, lld, method='Brent', lower=0, upper=8, hessian=TRUE)
+est <- optim(2, lld, method = "Brent", lower = 0, upper = 8, hessian = TRUE)
 
 # estimations
 est$par # mean of psi
@@ -113,25 +122,25 @@ m <- rvmideal(N, limmag, psi)
 
 # log likelihood function
 llr <- function(psi) {
-    -sum(dvmideal(m, limmag, psi, log=TRUE))
+    -sum(dvmideal(m, limmag, psi, log = TRUE))
 }
 
 # maximum likelihood estimation (MLE) of psi
-est <- optim(2, llr, method='Brent', lower=0, upper=8, hessian=TRUE)
+est <- optim(2, llr, method = "Brent", lower = 0, upper = 8, hessian = TRUE)
 
 # estimations
 est$par # mean of psi
-sqrt(1/est$hessian[1][1]) # standard deviation of psi
+sqrt(1 / est$hessian[1][1]) # standard deviation of psi
 
 m <- seq(6, -4, -1)
 p <- vismeteor::dvmideal(m, limmag, psi)
 barplot(
     p,
     names.arg = m,
-    main = paste0('Density (psi = ', psi, ', limmag = ', limmag, ')'),
+    main = paste0("Density (psi = ", psi, ", limmag = ", limmag, ")"),
     col = "blue",
-    xlab = 'm',
-    ylab = 'p',
+    xlab = "m",
+    ylab = "p",
     border = "blue",
     space = 0.5
 )
@@ -141,12 +150,12 @@ plot(
     \(lm) vismeteor::cvmideal(lm, psi, log = TRUE),
     -5, 10,
     main = paste0(
-        'Partial convolution of the ideal meteor magnitude distribution\n',
-        'with the perception probabilities (psi = ', psi, ')'
+        "Partial convolution of the ideal meteor magnitude distribution\n",
+        "with the perception probabilities (psi = ", psi, ")"
     ),
     col = "blue",
-    xlab = 'lm',
-    ylab = 'log(rate)'
+    xlab = "lm",
+    ylab = "log(rate)"
 )
 }
 \references{

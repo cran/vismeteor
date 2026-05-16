@@ -8,13 +8,20 @@
 \alias{rvmgeom}
 \title{Geometric Model of Visual Meteor Magnitudes}
 \usage{
-dvmgeom(m, lm, r, log = FALSE, perception.fun = NULL)
+dvmgeom(m, lm, r, log = FALSE, perception_fun = vmperception)
 
-pvmgeom(m, lm, r, lower.tail = TRUE, log = FALSE, perception.fun = NULL)
+pvmgeom(
+  m,
+  lm,
+  r,
+  lower.tail = TRUE,
+  log = FALSE,
+  perception_fun = vmperception
+)
 
-qvmgeom(p, lm, r, lower.tail = TRUE, perception.fun = NULL)
+qvmgeom(p, lm, r, lower.tail = TRUE, perception_fun = vmperception)
 
-rvmgeom(n, lm, r, perception.fun = NULL)
+rvmgeom(n, lm, r, perception_fun = vmperception)
 }
 \arguments{
 \item{m}{integer; the meteor magnitude.}
@@ -25,7 +32,7 @@ rvmgeom(n, lm, r, perception.fun = NULL)
 
 \item{log}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
 
-\item{perception.fun}{function; perception probability function (optional).
+\item{perception_fun}{function; perception probability function (optional).
 Default is \link{vmperception}.}
 
 \item{lower.tail}{logical; if \code{TRUE} (default) probabilities are
@@ -82,11 +89,11 @@ or \code{lm} must be a scalar value.
 In the case of \code{rvmgeom}, the length of the vector \code{lm} must equal \code{n},
 or \code{lm} must be a scalar value.
 
-If a different perception probability function \code{perception.fun} is provided,
+If a different perception probability function \code{perception_fun} is provided,
 it must have the signature \verb{function(x)} and return the perception probability of
 the difference \code{x} between the limiting magnitude and the meteor magnitude.
-If \code{x >= 15.0}, the function \code{perception.fun} should return a perception probability of \code{1.0}.
-The argument \code{perception.fun} is resolved using \link{match.fun}.
+If \code{x >= 15.0}, the function \code{perception_fun} should return a perception probability of \code{1.0}.
+The argument \code{perception_fun} is resolved using \link{match.fun}.
 }
 \examples{
 N <- 100
@@ -99,39 +106,39 @@ limmag <- 6.5
 
 # log likelihood function
 lld <- function(r) {
-    -sum(freq * dvmgeom(m, limmag, r, log=TRUE))
+    -sum(freq * dvmgeom(m, limmag, r, log = TRUE))
 }
 
 # maximum likelihood estimation (MLE) of r
-est <- optim(2, lld, method='Brent', lower=1.1, upper=4)
+est <- optim(2, lld, method = "Brent", lower = 1.1, upper = 4)
 
 # estimations
 est$par # mean of r
 
 # generate random meteor magnitudes
-m <- rvmgeom(N, r, lm=limmag)
+m <- rvmgeom(N, r, lm = limmag)
 
 # log likelihood function
 llr <- function(r) {
-    -sum(dvmgeom(m, limmag, r, log=TRUE))
+    -sum(dvmgeom(m, limmag, r, log = TRUE))
 }
 
 # maximum likelihood estimation (MLE) of r
-est <- optim(2, llr, method='Brent', lower=1.1, upper=4, hessian=TRUE)
+est <- optim(2, llr, method = "Brent", lower = 1.1, upper = 4, hessian = TRUE)
 
 # estimations
 est$par # mean of r
-sqrt(1/est$hessian[1][1]) # standard deviation of r
+sqrt(1 / est$hessian[1][1]) # standard deviation of r
 
 m <- seq(6, -4, -1)
 p <- vismeteor::dvmgeom(m, limmag, r)
 barplot(
     p,
     names.arg = m,
-    main = paste0('Density (r = ', r, ', limmag = ', limmag, ')'),
+    main = paste0("Density (r = ", r, ", limmag = ", limmag, ")"),
     col = "blue",
-    xlab = 'm',
-    ylab = 'p',
+    xlab = "m",
+    ylab = "p",
     border = "blue",
     space = 0.5
 )

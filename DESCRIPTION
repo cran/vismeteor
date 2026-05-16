@@ -1,7 +1,7 @@
 Package: vismeteor
 Type: Package
 Title: Analysis of Visual Meteor Data
-Version: 2.1.0
+Version: 3.0.0
 Authors@R: c(person("Janko", "Richter", role = c("aut", "cre"), email = "janko@richtej.de"))
 Author: Janko Richter [aut, cre]
 Maintainer: Janko Richter <janko@richtej.de>
@@ -15,11 +15,11 @@ Encoding: UTF-8
 LazyData: true
 Depends: R (>= 4.1.0)
 Imports: methods, stats, httr2 (>= 1.0.0)
-RoxygenNote: 7.3.3
 Suggests: testthat (>= 3.2.0), httptest2, knitr, rmarkdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
-Packaged: 2026-04-27 04:08:13 UTC; j.richter
+Packaged: 2026-05-16 20:16:29 UTC; j.richter
 Repository: CRAN
-Date/Publication: 2026-04-27 10:00:02 UTC
+Date/Publication: 2026-05-16 22:50:02 UTC

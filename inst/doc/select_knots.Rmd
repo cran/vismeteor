@@ -1,0 +1,496 @@
+---
+title: "Knot Selection for Smooth Profiles of Visual Meteor Showers"
+date: "`r Sys.Date()`"
+output:
+    rmarkdown::html_vignette:
+        toc: true
+        fig_width: 6
+        fig_height: 4
+vignette: >
+  %\VignetteIndexEntry{Knot Selection for Smooth Profiles of Visual Meteor Showers}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+## Setup
+
+Load the package before running any of the code below:
+
+```{r setup}
+library(vismeteor)
+```
+
+## Introduction
+
+The activity of a visual meteor shower is a smooth, a priori unknown
+function of solar longitude. The classical evaluation summarises this by
+computing the Zenithal Hourly Rate (ZHR) per observation interval and
+plotting it as a noisy stepped curve. Single-interval ZHRs have high
+variance — Poisson noise plus observer-to-observer scatter — and the
+underlying activity profile is barely visible.
+
+A spline-based fit across solar longitude collapses this noise into a
+smooth, bias-controlled curve, provided that the spline's complexity
+(number and location of interior knots) is chosen wisely.
+`select_knots()` automates that choice: given a candidate grid of
+possible interior knots and a user-supplied score function (BIC, AIC, or
+a cross-validation criterion), it returns a small subset that minimises
+the score.
+
+Conceptually, the supplied `knot_candidates` form a *grid of intervals*
+over the solar longitude: between two adjacent candidates lies an
+interval in which the spline can bend independently. `select_knots()`
+decides which interval boundaries are actually required — i.e. which
+positions carry enough curvature to justify a knot under the score. The
+natural resolution of the input grid in visual meteor work is the
+observation granularity itself: typical VMDB observation intervals are
+10–15 minutes long, corresponding to roughly 0.007–0.010 degrees of
+solar longitude. A fine candidate grid at that resolution is the
+practice recommendation; `select_knots()` will then reduce it to a
+handful of statistically significant knots.
+
+## When to use `select_knots()`
+
+The point of `select_knots()` is to keep the knot positions *explicit
+and few*: a handful of values you can plot, label, and reason about,
+instead of a dense anonymous knot grid hidden inside a penalised
+smoother. The function is model-agnostic — your `score_fun` picks the
+model family, offset, covariates, and the criterion (BIC, AIC, or a
+cross-validation score) you optimise.
+
+This function is the right tool when
+
+- you want a smooth curve through noisy count data,
+- knot positions should remain interpretable,
+- the model (family, offset, covariates) is too specific for a generic
+  GAM smoother.
+
+Prefer alternatives when
+
+- you want a continuous roughness penalty over a dense knot grid:
+  `mgcv::s(bs = "ps")`;
+- you want adaptive smoothing (smoothing parameter varying over the
+  predictor): `mgcv::s(bs = "ad")`;
+- you want a hinge-function basis with its own GCV-based pruning:
+  `earth::earth`;
+- you want a guaranteed global optimum: `select_knots()` is greedy and
+  only finds a local optimum (see `?select_knots`).
+
+**Important clarification.** `select_knots()` chooses knots for a *good
+fit*, not for detecting extrema. Knots typically land *next to* maxima
+or minima — where the curvature is high — and not *on* them. Local
+extrema of the activity profile become visible from the *shape* of the
+fitted curve, not from the list of selected knots.
+
+The implementation is generic, but its motivation comes directly from
+the visual-meteor use case: activity profiles are the natural setting
+in which knot positions can be *physically interpreted* — main maximum,
+sub-maxima, shower onset and end. The same interpretive value carries
+over to other meteor-related smooth fits — for instance the apparent
+magnitude distribution of a shower. Alternative packages (`mgcv`,
+`earth`) replace explicit knots with continuous penalty mechanisms,
+which gives up that interpretation.
+
+## Data preparation
+
+We use the package's example data set `PER_2015_rates` (visual rate
+observations of the Perseids 2015; see `?PER_2015_rates` and
+`?load_vmdb`). The raw filtering follows standard practice:
+
+```{r, echo=TRUE}
+data(PER_2015_rates)
+obs <- PER_2015_rates$observations
+obs <- subset(
+    obs,
+    rad_alt > 15 & moon_alt < 0 & sun_alt < -5 &
+        sl_start >= 139.2 & sl_end <= 140.6
+)
+
+deg2rad <- \(x) x * pi / 180
+obs$sl <- (obs$sl_start + obs$sl_end) / 2
+obs$t <- with(obs, t_eff * sin(deg2rad(rad_alt)) / f)
+
+rates <- data.frame(
+    sl     = obs$sl,
+    t      = obs$t,
+    limmag = obs$lim_magn,
+    freq   = obs$freq
+)
+rates <- rates[order(rates$sl), ]
+nrow(rates)
+```
+
+What each step does:
+
+- **`rad_alt > 15`** — when the radiant is low above the horizon
+  the geometric correction `sin(rad_alt)` becomes numerically
+  fragile and atmospheric extinction dominates; observations below
+  15 degrees are discarded by convention.
+- **`moon_alt < 0`** — the Moon above the horizon brightens the sky and
+  reduces the effective limiting magnitude in a way the simple `limmag`
+  correction does not capture; these observations are excluded rather
+  than corrected.
+- **`sun_alt < -5`** — nautical or astronomical twilight; before that
+  the sky is too bright.
+- **`sl_start >= 139.2 & sl_end <= 140.6`** — *only for this vignette*:
+  a tight window centred on the Perseid main peak, chosen narrow enough
+  to keep the vignette build fast while still containing the peak
+  (≈ 140.0 deg) and visible curvature on both sides. In a real analysis
+  you would use the full activity range (roughly 107–155 deg for the
+  Perseids).
+- **`sl = (sl_start + sl_end) / 2`** — VMDB observations are intervals;
+  we summarise each by its midpoint, the standard choice for the
+  regressor.
+- **`t = t_eff * sin(rad_alt) / f`** is the central correction. It
+  rescales the raw observing time to what the observer would have
+  spent under ideal sky conditions *at their own limiting magnitude*:
+  radiant in the zenith (`sin(rad_alt)`) and a clear sky (`f`).
+  `t_eff` is the effective observing time after deducting breaks; `f`
+  is the cloud-cover correction factor (`>= 1`, larger when more sky
+  is obstructed). The correction from each observer's own limiting
+  magnitude to the ZHR reference 6.5 is **not** built into `t`; the
+  GLM below picks it up via the `limmag` covariate.
+
+We will call `t` simply the **observing time** from now on — not to be
+confused with `t_eff`, the raw effective observing time after breaks;
+`t` is `t_eff` after the zenith (`sin(rad_alt)`) and cloud-cover
+(`/ f`) corrections.
+
+## Model: Poisson GLM with a spline of solar longitude
+
+```{r, echo=TRUE}
+fit_glm <- \(rates, knots) {
+    f <- if (length(knots) == 0L) {
+        freq ~ splines::ns(sl) + limmag + offset(log(t))
+    } else {
+        freq ~ splines::ns(sl, knots = knots) +
+            limmag + offset(log(t))
+    }
+    stats::glm(f, data = rates, family = stats::poisson())
+}
+score_bic <- \(rates, knots) stats::BIC(fit_glm(rates, knots))
+```
+
+`offset(log(t))` makes the linear predictor a log-rate per observing
+hour at the observer's own limiting magnitude. The `limmag` term then
+rescales that rate to the ZHR reference (limmag = 6.5):
+`exp(coef(limmag))` is the data-driven population index `r` of the
+shower under this model. The spline term `splines::ns()` is a natural
+cubic spline, well-behaved at the boundaries.
+
+A practical note on the offset: `offset()` inside a formula is a
+formula-special and must stay unqualified — both `stats::offset(...)`
+in the formula and passing the term via `glm()`'s `offset =` argument
+break `predict()` on `newdata`.
+
+## Knot candidates
+
+A regular grid is the simplest choice but ignores the actual observation
+density. In practice the candidate grid is built from the data themselves
+via `freq_quantile()` (see `?freq_quantile`): partition the observations,
+ordered by solar longitude, into bins each containing at least a fixed
+minimum number of meteors, then use the meteor-weighted solar-longitude
+midpoint of each bin as a candidate. This produces a fine grid in
+observation-rich regions and a coarse grid where data is sparse — exactly
+the resolution `select_knots()` benefits from:
+
+```{r, echo=TRUE}
+rates$q <- vismeteor::freq_quantile(rates$freq, 12) # >= 12 meteors per bin
+rates$qsl <- with(
+    rates,
+    ave(freq * sl, q, FUN = sum) /
+        ave(freq, q, FUN = sum)
+)
+cand <- unique(round(rates$qsl, 2))
+length(cand)
+```
+
+The `round(..., 2)` step collapses bins whose centres are practically
+indistinguishable (resolution 0.01 deg). The minimum bin count (`12`)
+controls how dense the candidate grid is; a smaller value gives a finer
+grid (slower fit), a larger value a coarser one.
+
+## Fixing knots
+
+The `fixed_knots` argument pins knot positions that must be present in
+every fitted model. In forward mode they are set from the start and the
+search adds further knots on top; in backward mode they are never
+proposed for removal, neither singly nor by bulk removal. `fixed_knots`
+need not be a subset of `knot_candidates` — values supplied there are
+forced into the working set regardless.
+
+A fixed knot is a *constraint* on the search, not a finding from it: the
+criterion no longer has the freedom to reject it. The earlier warning
+that knots typically land *next to* extrema rather than on them still
+applies — forcing a knot exactly on, say, a presumed maximum overrides
+that pattern at the chosen position. Use it when there is a non-data
+reason a position must be in the model (a documented event time, an
+external anchor, a stable reference across analyses); see
+`?select_knots` for the full semantics.
+
+## Forward selection
+
+The vignette runs serially (`n_cores = 1L`) because the search window
+is narrow. For a full Perseids activity range (≈ 107–155 deg) the
+per-round candidate scoring benefits from
+`n_cores = parallel::detectCores() - 1L`; see `?select_knots` for the
+reproducibility recipe with `mclapply()`.
+
+```{r, echo=TRUE}
+res_fwd <- vismeteor::select_knots(rates, cand, score_bic)
+sort(c(res_fwd$knots, res_fwd$fixed_knots))
+res_fwd$score
+```
+
+```{r, echo=TRUE, fig.alt="BIC trajectory of the forward search over the number of interior knots, with the score optimum at the endpoint"}
+plot(res_fwd$history$n_knots, res_fwd$history$score,
+    type = "b", pch = 19, col = "blue",
+    xlab = "number of interior knots", ylab = "BIC",
+    main = "Forward selection: BIC trajectory"
+)
+points(tail(res_fwd$history$n_knots, 1L), res_fwd$score,
+    pch = 19, col = "red", cex = 1.5
+)
+abline(h = res_fwd$score, lty = 2, col = "grey50")
+```
+
+The red point marks the score minimum — and with the default
+`n_steps = NULL` it is also the *endpoint* of the trajectory, because
+the search stops as soon as no further addition improves the score. To
+see what one more step would do, re-run the algorithm starting from the
+optimum with a positive `n_steps`:
+
+```{r, echo=TRUE}
+res_fwd_plus1 <- vismeteor::select_knots(rates, cand, score_bic,
+    fixed_knots = c(
+        res_fwd$knots,
+        res_fwd$fixed_knots
+    ),
+    n_steps = 1L
+)
+res_fwd_plus1$score - res_fwd$score # always >= 0: how much worse one step makes it
+```
+
+`n_steps` is an *exploration* knob, not a model-selection knob: it
+forces the algorithm to take a fixed number of further iterations
+regardless of whether they improve the score, so that the immediate
+score landscape past the optimum becomes visible through `history`. A
+shallow rise tells you the BIC optimum is soft and that a slightly
+richer model would not cost much; a steep rise tells you the optimum
+is sharp and the parsimony is justified. The same recipe — re-call
+with `fixed_knots = c(prev$knots, prev$fixed_knots), n_steps = k` —
+extends to as many follow-up steps as you like; see `?select_knots`.
+
+## Backward elimination
+
+```{r, echo=TRUE}
+res_bwd <- vismeteor::select_knots(rates, cand, score_bic, backward = TRUE)
+sort(c(res_bwd$knots, res_bwd$fixed_knots))
+res_bwd$score
+```
+
+```{r, echo=TRUE, fig.alt="BIC trajectory of the backward search over the number of interior knots, with the score optimum at the endpoint"}
+plot(res_bwd$history$n_knots, res_bwd$history$score,
+    type = "b", pch = 19, col = "blue",
+    xlab = "number of interior knots", ylab = "BIC",
+    main = "Backward elimination: BIC trajectory"
+)
+points(tail(res_bwd$history$n_knots, 1L), res_bwd$score,
+    pch = 19, col = "red", cex = 1.5
+)
+abline(h = res_bwd$score, lty = 2, col = "grey50")
+```
+
+The trajectory starts at the full candidate pool on the right and moves
+left as knots are removed; gaps along the x-axis correspond to bulk
+removal rounds (see `bulk_gap` in `?select_knots`). The red point again
+marks the score minimum.
+
+## Forward vs. backward: when and why they differ
+
+Both searches walk the lattice of knot subsets greedily — each round
+commits to the *locally* best add or drop — but they start at opposite
+corners:
+
+- **Forward** begins with no interior knots, an underfit model, and
+  adds the knot that reduces BIC the most. It stops as soon as no
+  single addition improves the score. Tends to be parsimonious; can
+  miss combinations of knots that are only useful *jointly* because
+  the first knot of the pair, on its own, did not look improving.
+- **Backward** begins with *all* candidates as interior knots — an
+  overfit, but flexible, model that already captures every local
+  curvature — and removes the knot whose removal worsens BIC least.
+  Tends to keep more knots; the danger of dropping a globally
+  important knot just because its neighbours mask its individual
+  contribution is real but less severe than forward's
+  miss-by-combination problem.
+
+That is *why* the two paths can disagree: at any intermediate state
+the score of a candidate move depends on what is currently selected.
+Adding `k_i` to the empty set is a genuinely different operation from
+adding `k_i` to a set that already contains its neighbours, and the
+two searches encounter `k_i` in incompatible contexts.
+
+**Practical recommendation.** For activity-profile fitting we
+recommend `backward = TRUE` for the final analysis, even though the
+function's API default is `FALSE` (the function is generic and
+defaults to the cheaper-per-fit direction). The reason is qualitative,
+not performance: starting from the overfit end ensures that all real
+curvature is already present in the initial model, so the search only
+has to decide what is redundant — which is the safer mode against the
+forward "miss-by-combination" failure. Use `backward = FALSE` (forward)
+for a quick, sparse first sketch or when the full-candidate initial
+fit is itself too expensive (very large candidate pool, complex model
+family).
+
+In practice neither direction is uniformly faster: forward iterates
+many small fits one knot at a time, while backward starts with the
+single most expensive fit and then collapses fast via the bulk-removal
+mechanism (`bulk_gap = 4L` by default; see `?select_knots`).
+
+In any case, running both directions and keeping the lower-BIC result
+is a cheap robustness check; large disagreements (in either knot
+count or score) are a warning that the chosen criterion is on the
+flat part of its landscape and that the data alone may not justify a
+unique parsimonious model. The `n_steps` argument lets either search
+continue for a fixed number of iterations past its first local
+minimum, which is useful for inspecting how flat or sharp that minimum
+is.
+
+## Final fit and ZHR curve
+
+```{r, echo=TRUE}
+best <- if (res_fwd$score <= res_bwd$score) {
+    c(res_fwd$knots, res_fwd$fixed_knots)
+} else {
+    c(res_bwd$knots, res_bwd$fixed_knots)
+}
+fit <- fit_glm(rates, sort(best))
+
+# Data-driven population index of the shower, with 95% Wald CI
+# (log-scale CI on the limmag coefficient, exponentiated).
+limmag_row <- summary(fit)$coefficients["limmag", ]
+r_hat <- exp(limmag_row["Estimate"])
+r_ci <- exp(limmag_row["Estimate"] +
+    c(-1, 1) * 1.96 * limmag_row["Std. Error"])
+c(
+    estimate = unname(r_hat),
+    lower = unname(r_ci[1]),
+    upper = unname(r_ci[2])
+)
+```
+
+The point estimate is the population index `r` implied by the
+rate-vs-limmag slope of this dataset; the CI width tells you how
+sharply that slope is pinned down by the observations (a tight band
+means a well-determined `r`, a wide band means the data leave it
+essentially free). It enters the ZHR prediction below.
+
+```{r, echo=TRUE, fig.alt="Fitted ZHR curve over solar longitude with a 95% confidence band and selected knots marked on the axis"}
+sl_grid <- seq(139.2, 140.6, length.out = 400)
+pred_df <- data.frame(sl = sl_grid, limmag = 6.5, t = 1)
+link <- predict(fit, newdata = pred_df, type = "link", se.fit = TRUE)
+zhr <- exp(link$fit)
+zhr_lo <- exp(link$fit - 1.96 * link$se.fit)
+zhr_hi <- exp(link$fit + 1.96 * link$se.fit)
+
+plot(sl_grid, zhr,
+    type = "n",
+    ylim = range(c(zhr_lo, zhr_hi)),
+    xlab = "solar longitude (deg)", ylab = "ZHR",
+    main = "PER 2015 - fitted activity profile (95% CI)"
+)
+polygon(c(sl_grid, rev(sl_grid)),
+    c(zhr_lo, rev(zhr_hi)),
+    col = adjustcolor("blue", alpha.f = 0.2), border = NA
+)
+lines(sl_grid, zhr, col = "blue", lwd = 2)
+rug(best, col = "red")
+```
+
+The prediction is evaluated with `t = 1` (one ZHR-hour) and
+`limmag = 6.5` (the reference limiting magnitude), so the response is
+the ZHR per hour on the chosen reference scale. The red rug marks on
+the x-axis show the selected interior knots; note that they sit *next
+to* the activity peak rather than on top of it, as expected — that is
+where the curvature is highest.
+
+The shaded band is the pointwise 95 % confidence interval of the fit.
+We obtain it on the **link** (log) scale — where the GLM's standard
+errors are approximately Gaussian — and then transform back with
+`exp()`. The band reflects parameter uncertainty of the spline + linear
+predictor; it is *not* a prediction interval for individual
+observations, which would also have to account for Poisson dispersion
+of the counts themselves.
+
+## Residual analysis with quantile bins
+
+Raw residuals of individual Poisson observations with small expectations
+are visually uninformative. A cleaner diagnostic groups the observations
+into bins of fixed minimum meteor count using `freq_quantile()` and
+compares the observed and expected totals per bin.
+
+```{r, echo=TRUE, fig.alt="Binned observed-over-expected ratios with one-sigma error bars over solar longitude"}
+# Use a coarser binning here than for the candidate grid above
+# (>= 500 meteors per bin) so that bin uncertainties are small enough
+# to read systematic deviations from the diagnostic plot.
+rates$qres <- vismeteor::freq_quantile(rates$freq, 500)
+rates$pred <- predict(fit, type = "response")
+
+bins <- with(rates, {
+    obs_n <- tapply(freq, qres, sum)
+    pred_n <- tapply(pred, qres, sum)
+    data.frame(
+        sl    = tapply(sl * freq, qres, sum) / obs_n,
+        ratio = obs_n / pred_n,
+        se    = sqrt(obs_n) / pred_n
+    )
+})
+nrow(bins)
+
+plot(bins$sl, bins$ratio,
+    pch = 19, col = "blue",
+    ylim = range(c(
+        bins$ratio - 2 * bins$se,
+        bins$ratio + 2 * bins$se
+    )),
+    xlab = "solar longitude (deg)",
+    ylab = "observed / expected",
+    main = "PER 2015 - binned residual ratios (+/- 1 sigma)"
+)
+arrows(bins$sl, bins$ratio - bins$se,
+    bins$sl, bins$ratio + bins$se,
+    angle = 90, code = 3, length = 0.03, col = "blue"
+)
+abline(h = 1, lty = 2, col = "grey50")
+```
+
+A well-fitting model scatters the bin ratios randomly around 1, with
+about two thirds of the one-sigma error bars crossing the dashed line.
+Systematic arches over solar longitude would indicate too few knots in
+a region; visible scatter with no trend is Poisson over-dispersion (not
+pursued here).
+
+The same `freq_quantile()` helper drives both the candidate grid above
+and the diagnostic here, but with different minimum bin sizes: a small
+minimum (12) for a fine candidate grid that `select_knots()` can prune
+from, and a larger minimum (500) for a small number of stable bins on
+which residual deviations are visually detectable. In the narrow vignette
+window the larger minimum yields only a handful of bins (see the
+`nrow(bins)` output); a full activity-range analysis would lower this
+minimum to keep enough bins for a visible trend.
+
+## See also
+
+- `?select_knots` — the function reference.
+- `?freq_quantile` — quantile bins used here for the residual diagnostic.
+- `?PER_2015_rates` — the example data set.
+- `?load_vmdb` — importing rate and magnitude observations from the
+  VMDB API.

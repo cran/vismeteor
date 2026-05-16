@@ -4,10 +4,10 @@
 \alias{vmperception}
 \title{Perception Probabilities of Visual Meteor Magnitudes}
 \usage{
-vmperception(m)
+vmperception(dm)
 }
 \arguments{
-\item{m}{numeric; difference between the limiting magnitude and the meteor magnitude.}
+\item{dm}{numeric; difference between the limiting magnitude and the meteor magnitude.}
 }
 \value{
 This function returns the visual perception probabilities.
@@ -19,8 +19,8 @@ Provides the perception probability of visual meteor magnitudes.
 The perception probabilities of \emph{Koschack R., Rendtel J., 1990b}
 are estimated with the formula
 \deqn{
-    p(m) = \begin{cases}
-        1.0 - \exp\left(-z(m + 0.5)\right)\  & \text{ if } m > -0.5,\\
+    p(dm) = \begin{cases}
+        1.0 - \exp\left(-z(dm + 0.5)\right)\  & \text{ if } dm > -0.5,\\
         0.0 \  & \text{ otherwise,}
     \end{cases}
 }
@@ -28,7 +28,7 @@ where
 \deqn{
 z(x) = 0.0037 \, x + 0.0019 \, x^2 + 0.00271 \, x^3 + 0.0009 \, x^4
 }
-and \code{m} is the difference between the limiting magnitude and the meteor magnitude.
+and \code{dm} is the difference between the limiting magnitude and the meteor magnitude.
 }
 \examples{
 # Perception probability of visually estimated meteor of magnitude 3.0
@@ -36,21 +36,23 @@ and \code{m} is the difference between the limiting magnitude and the meteor mag
 vmperception(5.6 - 3.0)
 
 # plot
-old_par <- par(mfrow = c(1,1))
+old_par <- par(mfrow = c(1, 1))
 plot(
     vmperception,
     -0.5, 8,
     main = paste(
-        'perception probability of',
-        'visual meteor magnitudes'
+        "perception probability of",
+        "visual meteor magnitudes"
     ),
     col = "blue",
-    xlab = 'm',
-    ylab = 'p'
+    xlab = "dm",
+    ylab = "p"
 )
 
 par(old_par)
 }
 \references{
-Koschack R., Rendtel J., 1990b \emph{Determination of spatial number density and mass index from visual meteor observations (II).} WGN 18, 119–140.
+Koschack R., Rendtel J., 1990b
+\emph{Determination of spatial number density and mass index from visual meteor observations (II).}
+WGN 18, 119–140.
 }

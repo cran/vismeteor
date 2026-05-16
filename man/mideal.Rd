@@ -47,69 +47,70 @@ for the ideal distribution of meteor magnitudes.
 \details{
 The density of the ideal distribution of meteor magnitudes is
 \deqn{
-    {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} = \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
+    {\displaystyle \frac{\mathrm{d}p}{\mathrm{d}m} =
+     \frac{3}{2} \, \log(r) \sqrt{\frac{r^{3 \, \psi + 2 \, m}}{(r^\psi + r^m)^5}}}
 }
 where \eqn{m} is the continuous (real-valued) meteor magnitude,
 \eqn{r = 10^{0.4} \approx 2.51189 \dots} is a constant and
 \eqn{\psi} is the only parameter of this magnitude distribution.
 }
 \examples{
-old_par <- par(mfrow = c(2,2))
+old_par <- par(mfrow = c(2, 2))
 psi <- 5.0
 plot(
     \(m) dmideal(m, psi, log = FALSE),
     -5, 10,
-    main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
+    main = paste0("Density of the Ideal Meteor Magnitude\nDistribution (psi = ", psi, ")"),
     col = "blue",
-    xlab = 'm',
-    ylab = 'dp/dm'
+    xlab = "m",
+    ylab = "dp/dm"
 )
-abline(v=psi, col="red")
+abline(v = psi, col = "red")
 
 plot(
     \(m) dmideal(m, psi, log = TRUE),
     -5, 10,
-    main = paste0('Density of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
+    main = paste0("Density of the Ideal Meteor Magnitude\nDistribution (psi = ", psi, ")"),
     col = "blue",
-    xlab = 'm',
-    ylab = 'log( dp/dm )'
+    xlab = "m",
+    ylab = "log( dp/dm )"
 )
-abline(v=psi, col="red")
+abline(v = psi, col = "red")
 
 plot(
     \(m) pmideal(m, psi),
     -5, 10,
-    main = paste0('Probability of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
+    main = paste0("Probability of the Ideal Meteor Magnitude\nDistribution (psi = ", psi, ")"),
     col = "blue",
-    xlab = 'm',
-    ylab = 'p'
+    xlab = "m",
+    ylab = "p"
 )
-abline(v=psi, col="red")
+abline(v = psi, col = "red")
 
 plot(
     \(p) qmideal(p, psi),
     0.01, 0.99,
-    main = paste('Quantile of the Ideal Meteor Magnitude\nDistribution (psi = ', psi, ')'),
+    main = paste("Quantile of the Ideal Meteor Magnitude\nDistribution (psi = ", psi, ")"),
     col = "blue",
-    xlab = 'p',
-    ylab = 'm'
+    xlab = "p",
+    ylab = "m"
 )
-abline(h=psi, col="red")
+abline(h = psi, col = "red")
 
 # generate random meteor magnitudes
 m <- rmideal(1000, psi)
 
 # log likelihood function
 llr <- function(psi) {
-    -sum(dmideal(m, psi, log=TRUE))
+    -sum(dmideal(m, psi, log = TRUE))
 }
 
 # maximum likelihood estimation (MLE) of psi
-est <- optim(2, llr, method='Brent', lower=0, upper=8, hessian=TRUE)
+est <- optim(2, llr, method = "Brent", lower = 0, upper = 8, hessian = TRUE)
 
 # estimations
 est$par # mean of psi
-sqrt(1/est$hessian[1][1]) # standard deviation of psi
+sqrt(1 / est$hessian[1][1]) # standard deviation of psi
 
 par(old_par)
 }

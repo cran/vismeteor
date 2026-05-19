@@ -61,7 +61,7 @@ The function `select_knots()` performs greedy stepwise selection of interior spl
 a user-supplied candidate grid. In each step it adds (forward) or removes (backward) the single
 knot that most improves a user-defined score, such as BIC, AIC, or a cross-validation criterion.
 The routine is model-agnostic: the scoring function is responsible for fitting the model — a
-Poisson GLM, a natural cubic spline via `lm()`, or any other form — so `select_knots()` can
+Poisson GLM, a natural cubic spline via `glm()`, or any other form — so `select_knots()` can
 be reused across very different analyses.
 
 A typical application is fitting the activity profile of a meteor shower over solar longitude
@@ -104,7 +104,8 @@ lines(x, 50 + 30 * sin(x), col = "darkgreen", lwd = 2, lty = 2)
 lines(x, final_fit |> predict(type = "response"), col = "blue", lwd = 2)
 abline(v = final_knots, col = "red", lty = 3)
 legend(
-    "bottom", inset = c(0, -0.35),
+    "bottom",
+    inset = c(0, -0.35),
     legend = c("true mean", "spline fit", "selected knots"),
     col = c("darkgreen", "blue", "red"),
     lty = c(2, 1, 3),

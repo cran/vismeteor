@@ -9,9 +9,7 @@ library(vismeteor)
 
 ## ----echo=TRUE----------------------------------------------------------------
 data(PER_2015_rates)
-obs <- PER_2015_rates$observations
-obs <- subset(
-    obs,
+obs <- PER_2015_rates$observations |> subset(
     rad_alt > 15 & moon_alt < 0 & sun_alt < -5 &
         sl_start >= 139.2 & sl_end <= 140.6
 )
@@ -21,10 +19,10 @@ obs$sl <- (obs$sl_start + obs$sl_end) / 2
 obs$t <- with(obs, t_eff * sin(deg2rad(rad_alt)) / f)
 
 rates <- data.frame(
-    sl     = obs$sl,
-    t      = obs$t,
+    sl = obs$sl,
+    t = obs$t,
     limmag = obs$lim_magn,
-    freq   = obs$freq
+    freq = obs$freq
 )
 rates <- rates[order(rates$sl), ]
 nrow(rates)
@@ -42,13 +40,12 @@ fit_glm <- \(rates, knots) {
 score_bic <- \(rates, knots) stats::BIC(fit_glm(rates, knots))
 
 ## ----echo=TRUE----------------------------------------------------------------
-rates$q <- vismeteor::freq_quantile(rates$freq, 12) # >= 12 meteors per bin
+rates$q <- vismeteor::freq_quantile(rates$freq, 12) # at least 12 meteors per bin
 rates$qsl <- with(
     rates,
-    ave(freq * sl, q, FUN = sum) /
-        ave(freq, q, FUN = sum)
+    ave(freq * sl, q, FUN = sum) / ave(freq, q, FUN = sum)
 )
-cand <- unique(round(rates$qsl, 2))
+cand <- sort(unique(round(rates$qsl, 2)))
 length(cand)
 
 ## ----echo=TRUE----------------------------------------------------------------

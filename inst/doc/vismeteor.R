@@ -46,7 +46,8 @@ lines(x, 50 + 30 * sin(x), col = "darkgreen", lwd = 2, lty = 2)
 lines(x, final_fit |> predict(type = "response"), col = "blue", lwd = 2)
 abline(v = final_knots, col = "red", lty = 3)
 legend(
-    "bottom", inset = c(0, -0.35),
+    "bottom",
+    inset = c(0, -0.35),
     legend = c("true mean", "spline fit", "selected knots"),
     col = c("darkgreen", "blue", "red"),
     lty = c(2, 1, 3),

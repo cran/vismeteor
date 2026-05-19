@@ -1,0 +1,26 @@
+{
+  "observations": [
+    {
+      "id": 200,
+      "period_start": "2015-08-12T00:00:00",
+      "period_end": "2015-08-12T01:00:00",
+      "sl_start": 140.0,
+      "sl_end": 140.5,
+      "session_id": 1,
+      "freq": 8,
+      "mean": 4.2,
+      "lim_magn": 6.5
+    },
+    {
+      "id": 201,
+      "period_start": "2015-08-12T01:00:00",
+      "period_end": "2015-08-12T02:00:00",
+      "sl_start": 140.5,
+      "sl_end": 141.0,
+      "session_id": 1,
+      "freq": 6,
+      "mean": 4.4,
+      "lim_magn": 6.4
+    }
+  ]
+}

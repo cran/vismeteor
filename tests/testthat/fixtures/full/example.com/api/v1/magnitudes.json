@@ -3,8 +3,8 @@
     {
       "id": 200,
       "shower": "PER",
-      "period_start": "2015-08-12 00:00:00",
-      "period_end": "2015-08-12 01:00:00",
+      "period_start": "2015-08-12T00:00:00",
+      "period_end": "2015-08-12T01:00:00",
       "sl_start": 140.0,
       "sl_end": 140.5,
       "session_id": 1,
@@ -25,7 +25,7 @@
       "observer_name": "Doe, J."
     }
   ],
-  "magnitudes": [
+  "magnitude_details": [
     {"id": 200, "magn": 3, "freq": 2.5},
     {"id": 200, "magn": 2, "freq": 4.0},
     {"id": 200, "magn": 1, "freq": 5.5}

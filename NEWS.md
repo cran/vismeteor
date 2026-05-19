@@ -1,3 +1,32 @@
+# vismeteor 3.0.1
+
+## Bug fixes
+
+- `load_vmdb_rates()` and `load_vmdb_magnitudes()` now correctly request
+  the per-magnitude-class frequencies from the imo-vmdb REST API.
+  Previously `with_magnitudes = TRUE` sent `include=magnitudes`, which on
+  `/magnitudes` returned `HTTP 400` and on `/rates` produced a response
+  shape that `.parse_magnitudes()` could not handle.  The functions now
+  send `include=magnitude_details`, restoring the documented behaviour.
+- The `period_start` and `period_end` columns of the `observations`
+  data.frame returned by `load_vmdb_rates()` and `load_vmdb_magnitudes()`
+  are now `POSIXct` (UTC), matching the behaviour of vismeteor 2.x.
+  They were inadvertently returned as `character` after the switch to
+  `httr2` in 3.0.0.
+- The `period` argument of `load_vmdb_rates()` and
+  `load_vmdb_magnitudes()` is now serialised to the strict ISO 8601
+  form (`YYYY-MM-DDTHH:MM:SS`, UTC) that imo-vmdb 2.0 expects.  `Date`,
+  `POSIXct`, and character (full datetime or date-only) inputs are all
+  accepted; date-only inputs are expanded to midnight (lower) and
+  23:59:59 (upper) of the given day.
+
+## Compatibility
+
+- Requires **imo-vmdb ≥ 2.0.0** on the server side.  2.0 introduced
+  the `include=magnitude_details` parameter and the strict ISO 8601
+  wire format (`T` separator, no timezone marker) for `period_start` /
+  `period_end`; both are required by this release.
+
 # vismeteor 3.0.0
 
 ## New features

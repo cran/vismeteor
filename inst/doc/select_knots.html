@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2026-05-16" />
+<meta name="date" content="2026-05-19" />
 
 <title>Knot Selection for Smooth Profiles of Visual Meteor Showers</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Knot Selection for Smooth Profiles of
 Visual Meteor Showers</h1>
-<h4 class="date">2026-05-16</h4>
+<h4 class="date">2026-05-19</h4>
 
 
 <div id="TOC">
@@ -450,26 +450,24 @@ continuous penalty mechanisms, which gives up that interpretation.</p>
 <code>?PER_2015_rates</code> and <code>?load_vmdb</code>). The raw
 filtering follows standard practice:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(PER_2015_rates)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>obs <span class="ot">&lt;-</span> PER_2015_rates<span class="sc">$</span>observations</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>obs <span class="ot">&lt;-</span> <span class="fu">subset</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>    obs,</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>    rad_alt <span class="sc">&gt;</span> <span class="dv">15</span> <span class="sc">&amp;</span> moon_alt <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> sun_alt <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">5</span> <span class="sc">&amp;</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>        sl_start <span class="sc">&gt;=</span> <span class="fl">139.2</span> <span class="sc">&amp;</span> sl_end <span class="sc">&lt;=</span> <span class="fl">140.6</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>)</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>deg2rad <span class="ot">&lt;-</span> \(x) x <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>obs<span class="sc">$</span>sl <span class="ot">&lt;-</span> (obs<span class="sc">$</span>sl_start <span class="sc">+</span> obs<span class="sc">$</span>sl_end) <span class="sc">/</span> <span class="dv">2</span></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>obs<span class="sc">$</span>t <span class="ot">&lt;-</span> <span class="fu">with</span>(obs, t_eff <span class="sc">*</span> <span class="fu">sin</span>(<span class="fu">deg2rad</span>(rad_alt)) <span class="sc">/</span> f)</span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>rates <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>    <span class="at">sl     =</span> obs<span class="sc">$</span>sl,</span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>    <span class="at">t      =</span> obs<span class="sc">$</span>t,</span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>    <span class="at">limmag =</span> obs<span class="sc">$</span>lim_magn,</span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>    <span class="at">freq   =</span> obs<span class="sc">$</span>freq</span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>)</span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>rates <span class="ot">&lt;-</span> rates[<span class="fu">order</span>(rates<span class="sc">$</span>sl), ]</span>
-<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="fu">nrow</span>(rates)</span>
-<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; [1] 1986</span></span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>obs <span class="ot">&lt;-</span> PER_2015_rates<span class="sc">$</span>observations <span class="sc">|&gt;</span> <span class="fu">subset</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>    rad_alt <span class="sc">&gt;</span> <span class="dv">15</span> <span class="sc">&amp;</span> moon_alt <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> sun_alt <span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">5</span> <span class="sc">&amp;</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>        sl_start <span class="sc">&gt;=</span> <span class="fl">139.2</span> <span class="sc">&amp;</span> sl_end <span class="sc">&lt;=</span> <span class="fl">140.6</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>deg2rad <span class="ot">&lt;-</span> \(x) x <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>obs<span class="sc">$</span>sl <span class="ot">&lt;-</span> (obs<span class="sc">$</span>sl_start <span class="sc">+</span> obs<span class="sc">$</span>sl_end) <span class="sc">/</span> <span class="dv">2</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>obs<span class="sc">$</span>t <span class="ot">&lt;-</span> <span class="fu">with</span>(obs, t_eff <span class="sc">*</span> <span class="fu">sin</span>(<span class="fu">deg2rad</span>(rad_alt)) <span class="sc">/</span> f)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>rates <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>    <span class="at">sl =</span> obs<span class="sc">$</span>sl,</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>    <span class="at">t =</span> obs<span class="sc">$</span>t,</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>    <span class="at">limmag =</span> obs<span class="sc">$</span>lim_magn,</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>    <span class="at">freq =</span> obs<span class="sc">$</span>freq</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>)</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>rates <span class="ot">&lt;-</span> rates[<span class="fu">order</span>(rates<span class="sc">$</span>sl), ]</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="fu">nrow</span>(rates)</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; [1] 1986</span></span></code></pre></div>
 <p>What each step does:</p>
 <ul>
 <li><strong><code>rad_alt &gt; 15</code></strong> — when the radiant is
@@ -523,11 +521,11 @@ cloud-cover (<code>/ f</code>) corrections.</p>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>score_bic <span class="ot">&lt;-</span> \(rates, knots) stats<span class="sc">::</span><span class="fu">BIC</span>(<span class="fu">fit_glm</span>(rates, knots))</span></code></pre></div>
 <p><code>offset(log(t))</code> makes the linear predictor a log-rate per
 observing hour at the observer’s own limiting magnitude. The
-<code>limmag</code> term then rescales that rate to the ZHR reference
-(limmag = 6.5): <code>exp(coef(limmag))</code> is the data-driven
-population index <code>r</code> of the shower under this model. The
-spline term <code>splines::ns()</code> is a natural cubic spline,
-well-behaved at the boundaries.</p>
+<code>limmag</code> term then rescales that rate later to the ZHR
+reference (<code>limmag = 6.5</code>): <code>exp(coef(limmag))</code> is
+the data-driven population index <code>r</code> of the shower under this
+model. The spline term <code>splines::ns()</code> is a natural cubic
+spline, well-behaved at the boundaries.</p>
 <p>A practical note on the offset: <code>offset()</code> inside a
 formula is a formula-special and must stay unqualified — both
 <code>stats::offset(...)</code> in the formula and passing the term via
@@ -545,15 +543,14 @@ number of meteors, then use the meteor-weighted solar-longitude midpoint
 of each bin as a candidate. This produces a fine grid in
 observation-rich regions and a coarse grid where data is sparse —
 exactly the resolution <code>select_knots()</code> benefits from:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>rates<span class="sc">$</span>q <span class="ot">&lt;-</span> vismeteor<span class="sc">::</span><span class="fu">freq_quantile</span>(rates<span class="sc">$</span>freq, <span class="dv">12</span>) <span class="co"># &gt;= 12 meteors per bin</span></span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>rates<span class="sc">$</span>q <span class="ot">&lt;-</span> vismeteor<span class="sc">::</span><span class="fu">freq_quantile</span>(rates<span class="sc">$</span>freq, <span class="dv">12</span>) <span class="co"># at least 12 meteors per bin</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>rates<span class="sc">$</span>qsl <span class="ot">&lt;-</span> <span class="fu">with</span>(</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>    rates,</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>    <span class="fu">ave</span>(freq <span class="sc">*</span> sl, q, <span class="at">FUN =</span> sum) <span class="sc">/</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>        <span class="fu">ave</span>(freq, q, <span class="at">FUN =</span> sum)</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>)</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>cand <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">round</span>(rates<span class="sc">$</span>qsl, <span class="dv">2</span>))</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="fu">length</span>(cand)</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; [1] 103</span></span></code></pre></div>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>    <span class="fu">ave</span>(freq <span class="sc">*</span> sl, q, <span class="at">FUN =</span> sum) <span class="sc">/</span> <span class="fu">ave</span>(freq, q, <span class="at">FUN =</span> sum)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>cand <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(<span class="fu">round</span>(rates<span class="sc">$</span>qsl, <span class="dv">2</span>)))</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">length</span>(cand)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [1] 103</span></span></code></pre></div>
 <p>The <code>round(..., 2)</code> step collapses bins whose centres are
 practically indistinguishable (resolution 0.01 deg). The minimum bin
 count (<code>12</code>) controls how dense the candidate grid is; a

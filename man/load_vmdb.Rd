@@ -39,7 +39,13 @@ load_vmdb_magnitudes(
 \item{shower}{character; selects by meteor shower codes.
 \code{NA} loads sporadic meteors.}
 
-\item{period}{time; selects a time range by minimum/maximum.}
+\item{period}{selects an observation time range by minimum/maximum.
+Accepts \code{POSIXct}, \code{Date}, or character.  Character
+elements may be \code{"YYYY-MM-DDTHH:MM:SS"},
+\code{"YYYY-MM-DD HH:MM:SS"}, or date-only \code{"YYYY-MM-DD"}.
+Date-only inputs are expanded to midnight (lower bound) and
+23:59:59 (upper bound) of the given day, in UTC.  IMO data is UTC
+by convention; the timezone marker is omitted on the wire.}
 
 \item{sl}{numeric; selects a range of solar longitudes by minimum/maximum.}
 
@@ -80,8 +86,8 @@ frequencies.
 \tabular{ll}{
 \code{rate_id} \tab unique identifier of the rate observation,\cr
 \code{shower} \tab IAU code of the shower. \code{NA} for sporadic.\cr
-\code{period_start} \tab start of observation,\cr
-\code{period_end} \tab end of observation,\cr
+\code{period_start} \tab \code{POSIXct} (UTC); start of observation,\cr
+\code{period_end} \tab \code{POSIXct} (UTC); end of observation,\cr
 \code{sl_start} \tab solar longitude at start,\cr
 \code{sl_end} \tab solar longitude at end,\cr
 \code{session_id} \tab reference to the session,\cr
@@ -99,7 +105,11 @@ frequencies.
 \code{field_az} \tab azimuth of the field of view (optional),\cr
 \code{rad_alt} \tab altitude of the radiant (optional),\cr
 \code{rad_az} \tab azimuth of the radiant (optional),\cr
-\code{magn_id} \tab reference to the magnitude observations (optional).
+\code{magn_id} \tab reference to the magnitude observations (optional),\cr
+\code{magn_solo} \tab \code{TRUE} if this rate is the sole contributor
+to its linked magnitude observation; \code{FALSE} if the magnitude
+aggregates this rate with others; \code{NA} when \code{magn_id} is
+\code{NA} (optional).
 }
 
 \code{load_vmdb_magnitudes} returns an \code{observations} data frame with:
@@ -107,8 +117,8 @@ frequencies.
 \tabular{ll}{
 \code{magn_id} \tab unique identifier of the magnitude observation,\cr
 \code{shower} \tab IAU code of the shower. \code{NA} for sporadic.\cr
-\code{period_start} \tab start of observation,\cr
-\code{period_end} \tab end of observation,\cr
+\code{period_start} \tab \code{POSIXct} (UTC); start of observation,\cr
+\code{period_end} \tab \code{POSIXct} (UTC); end of observation,\cr
 \code{sl_start} \tab solar longitude at start,\cr
 \code{sl_end} \tab solar longitude at end,\cr
 \code{session_id} \tab reference to the session,\cr
@@ -173,6 +183,14 @@ data <- load_vmdb_magnitudes(
     period       = c("2015-08-01", "2015-08-31"),
     lim_magn     = c(5.3, 6.7),
     with_sessions = TRUE
+)
+
+# Period can also be given as POSIXct or as full ISO 8601 datetime
+# strings — useful for narrowing to a specific time window within a day.
+data <- load_vmdb_rates(
+    base_url = "http://localhost:8000/api/v1",
+    shower   = "PER",
+    period   = c("2015-08-12T20:00:00", "2015-08-13T04:00:00")
 )
 }
 }
